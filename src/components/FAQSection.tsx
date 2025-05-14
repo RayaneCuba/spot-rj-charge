@@ -1,6 +1,12 @@
 
-import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from "@/components/ui/navigation-menu";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Card } from "@/components/ui/card";
+import { HelpCircle, MapPin } from "lucide-react";
 
 export function FAQSection() {
   const faqs = [
@@ -31,24 +37,33 @@ export function FAQSection() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-4xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-2">Perguntas frequentes</h2>
-        <p className="text-muted-foreground">Tire suas dúvidas sobre o ElectroSpot</p>
+        <div className="inline-flex items-center justify-center mb-4">
+          <div className="bg-electric-green/10 p-3 rounded-full">
+            <HelpCircle className="h-6 w-6 text-electric-green" />
+          </div>
+        </div>
+        <h2 className="text-3xl font-bold mb-2 font-montserrat">Perguntas frequentes</h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Tire suas dúvidas sobre o ElectroSpot e nossa rede de eletropostos no Rio de Janeiro
+        </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {faqs.map((faq, index) => (
-          <Card key={index}>
-            <CardHeader>
-              <CardTitle className="text-lg">{faq.question}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>{faq.answer}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card className="border border-electric-green/20 overflow-hidden">
+        <Accordion type="single" collapsible className="w-full divide-y">
+          {faqs.map((faq, index) => (
+            <AccordionItem key={index} value={`item-${index}`}>
+              <AccordionTrigger className="px-6 py-4 hover:bg-muted/50 font-montserrat font-medium text-left">
+                {faq.question}
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-4 pt-2 text-muted-foreground">
+                {faq.answer}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </Card>
     </div>
   );
 }

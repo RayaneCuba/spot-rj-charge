@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Moon, Sun } from "lucide-react";
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -34,7 +35,17 @@ export function ThemeToggle() {
       onClick={toggleTheme}
       className="bg-background"
     >
-      {theme === "light" ? "🌙" : "☀️"} {!isMobile && (theme === "light" ? "Modo escuro" : "Modo claro")}
+      {theme === "light" ? (
+        <Moon className="h-[1.2rem] w-[1.2rem]" />
+      ) : (
+        <Sun className="h-[1.2rem] w-[1.2rem]" />
+      )}
+      
+      {!isMobile && (
+        <span className="ml-2">
+          {theme === "light" ? "Modo escuro" : "Modo claro"}
+        </span>
+      )}
     </Button>
   );
 }

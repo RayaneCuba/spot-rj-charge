@@ -1,6 +1,5 @@
-
 import { Link } from "react-router-dom";
-import { ElectricCar, Instagram, Mail, Phone, ExternalLink } from "lucide-react";
+import { Car, Instagram, Mail, Phone, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
@@ -27,7 +26,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <ElectricCar className="h-6 w-6 text-electric-green" />
+              <Car className="h-6 w-6 text-electric-green" />
               <span className="font-montserrat font-bold text-xl text-white">ElectroSpot</span>
             </div>
             <p className="text-sm text-gray-300 mb-4">

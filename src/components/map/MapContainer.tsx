@@ -33,7 +33,7 @@ function MapController({ stations, selectedStation }: {
   // Fit map to show all markers
   useEffect(() => {
     if (stations.length > 0) {
-      const bounds = new L.LatLngBounds();
+      const bounds = new L.LatLngBounds([0, 0]); // Initialize with a default point
       stations.forEach(station => {
         bounds.extend([station.lat, station.lng]);
       });

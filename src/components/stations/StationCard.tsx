@@ -9,6 +9,7 @@ interface StationCardProps {
     city: string;
     type: string;
     hours: string;
+    distance?: number;
   };
   isSelected: boolean;
   onClick: (id: number) => void;
@@ -24,7 +25,7 @@ export function StationCard({ station, isSelected, onClick }: StationCardProps) 
       <CardContent className="p-4">
         <div className="flex items-start gap-2">
           <MapPin className={`h-5 w-5 mt-1 ${isSelected ? 'text-primary' : 'text-secondary'}`} />
-          <div>
+          <div className="w-full">
             <h3 className="font-montserrat font-semibold text-lg">{station.name}</h3>
             <p className="text-muted-foreground text-sm">{station.city}</p>
             <div className="mt-2 text-sm space-y-1">
@@ -36,6 +37,12 @@ export function StationCard({ station, isSelected, onClick }: StationCardProps) 
                 <span className="text-muted-foreground">Horário:</span>
                 <span>{station.hours}</span>
               </div>
+              {station.distance !== undefined && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Distância:</span>
+                  <span>{station.distance.toFixed(1)} km</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

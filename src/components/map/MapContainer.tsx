@@ -1,8 +1,10 @@
-import { MapContainer as LeafletMap, TileLayer, useMap } from 'react-leaflet';
+
+import { MapContainer as LeafletMap, TileLayer, useMap, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { StationMarker } from './StationMarker';
 import { useEffect, useState } from 'react';
 import L from 'leaflet';
+import { UserLocationMarker } from './UserLocationMarker';
 
 interface MapContainerProps {
   stations: {
@@ -20,6 +22,7 @@ interface MapContainerProps {
 
 export function MapContainer({ stations, selectedStation, onSelectStation }: MapContainerProps) {
   const [map, setMap] = useState<L.Map | null>(null);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
 
   // Fly to selected station
   useEffect(() => {
@@ -33,6 +36,23 @@ export function MapContainer({ stations, selectedStation, onSelectStation }: Map
     }
   }, [selectedStation, stations, map]);
 
+  // Get user location
+  useEffect(() => {
+    if (map && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation([latitude, longitude]);
+          map.flyTo([latitude, longitude], 14);
+        },
+        (error) => {
+          console.error('Error getting user location:', error);
+        },
+        { enableHighAccuracy: true }
+      );
+    }
+  }, [map]);
+
   return (
     <LeafletMap
       center={[40.7128, -74.0060]} // Default to New York
@@ -44,6 +64,12 @@ export function MapContainer({ stations, selectedStation, onSelectStation }: Map
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      
+      {/* User location marker */}
+      {userLocation && (
+        <UserLocationMarker position={userLocation} />
+      )}
+      
       {stations.map(station => (
         <StationMarker
           key={station.id}

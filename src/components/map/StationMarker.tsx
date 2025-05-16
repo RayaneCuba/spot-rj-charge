@@ -1,6 +1,7 @@
 
 import { Marker, Popup } from "react-leaflet";
 import L from "leaflet";
+import { useEffect, useState } from "react";
 
 interface StationMarkerProps {
   station: {
@@ -17,19 +18,29 @@ interface StationMarkerProps {
 }
 
 export function StationMarker({ station, isSelected, onClick }: StationMarkerProps) {
-  // Create a custom marker icon
-  const iconUrl = isSelected 
-    ? "/marker-electric-green.svg" 
-    : "/marker-blue.svg";
+  const [markerIcon, setMarkerIcon] = useState<L.Icon | null>(null);
+  
+  // Use effect to create the icon to avoid SSR issues
+  useEffect(() => {
+    // Create a custom marker icon
+    const iconUrl = isSelected 
+      ? "/marker-electric-green.svg" 
+      : "/marker-blue.svg";
+      
+    const icon = new L.Icon({
+      iconUrl: iconUrl,
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowUrl: 'leaflet/dist/images/marker-shadow.png',
+      shadowSize: [41, 41]
+    });
     
-  const markerIcon = new L.Icon({
-    iconUrl: iconUrl,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowUrl: 'leaflet/dist/images/marker-shadow.png',
-    shadowSize: [41, 41]
-  });
+    setMarkerIcon(icon);
+  }, [isSelected]);
+  
+  // Only render the marker when the icon is loaded
+  if (!markerIcon) return null;
 
   return (
     <Marker 

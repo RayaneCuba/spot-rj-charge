@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MapContainer as LeafletMapContainer, TileLayer, ZoomControl, useMap } from "react-leaflet";
-import { LatLngBounds, LatLngBoundsExpression } from "leaflet";
+import { LatLngBounds } from "leaflet";
 import { StationMarker } from "./StationMarker";
 import "leaflet/dist/leaflet.css";
 

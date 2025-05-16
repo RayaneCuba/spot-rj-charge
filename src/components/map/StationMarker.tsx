@@ -19,8 +19,8 @@ interface StationMarkerProps {
 export function StationMarker({ station, isSelected, onClick }: StationMarkerProps) {
   // Create a custom marker icon
   const iconUrl = isSelected 
-    ? "/marker-electric-green.png" 
-    : "/marker-blue.png";
+    ? "/marker-electric-green.svg" 
+    : "/marker-blue.svg";
     
   const markerIcon = new L.Icon({
     iconUrl: iconUrl,

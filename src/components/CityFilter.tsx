@@ -1,26 +1,15 @@
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, MapPin, Filter } from "lucide-react";
-import { cities, chargingStations } from "@/data/stations";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useState } from "react";
 import { toast } from "sonner";
+import { cities } from "@/data/stations";
+import { FilterHeader } from "./city-filter/FilterHeader";
+import { SearchForm } from "./city-filter/SearchForm";
+import { AdvancedFilters } from "./city-filter/AdvancedFilters";
+import { CHARGING_TYPES } from "./city-filter/constants";
 
 interface CityFilterProps {
   onFilterChange: (city: string) => void;
 }
-
-const chargingTypes = [
-  "Rápido (150kW)",
-  "Rápido (100kW)",
-  "Rápido (50kW)",
-  "Semi-rápido (22kW)",
-  "Semi-rápido (11kW)",
-  "Lento (7kW)"
-];
 
 export function CityFilter({ onFilterChange }: CityFilterProps) {
   const [selectedCity, setSelectedCity] = useState<string>("all");
@@ -63,160 +52,48 @@ export function CityFilter({ onFilterChange }: CityFilterProps) {
     });
   };
   
+  const resetFilters = () => {
+    setSelectedTypes([]);
+    setAvailability("all");
+    toast.success("Filtros resetados");
+  };
+  
+  const applyFilters = () => {
+    toast.success("Filtros aplicados");
+    // Aqui você implementaria a lógica para filtrar por tipo e disponibilidade
+    setShowFilters(false);
+  };
+  
+  const toggleFilters = () => {
+    setShowFilters(!showFilters);
+  };
+  
   return (
     <div className="bg-white dark:bg-dark-blue rounded-lg shadow-lg p-6 mb-6">
-      <div className="mb-4">
-        <h3 className="text-lg font-montserrat font-semibold mb-2">Encontre eletropostos por cidade</h3>
-        <p className="text-muted-foreground text-sm">
-          Selecione uma cidade ou digite para buscar
-        </p>
-      </div>
+      <FilterHeader 
+        title="Encontre eletropostos por cidade"
+        description="Selecione uma cidade ou digite para buscar"
+      />
       
-      <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1">
-          <Label htmlFor="city-search">Pesquisar por cidade</Label>
-          <div className="relative mt-1">
-            <Input
-              id="city-search"
-              placeholder="Digite o nome da cidade..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-            <MapPin className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
-          </div>
-        </div>
-        
-        <div className="flex-1">
-          <Label htmlFor="city-select">Ou selecione uma cidade</Label>
-          <Select value={selectedCity} onValueChange={handleCityChange}>
-            <SelectTrigger id="city-select" className="mt-1">
-              <SelectValue placeholder="Selecione uma cidade" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as cidades</SelectItem>
-              {cities.map((city) => (
-                <SelectItem key={city} value={city}>{city}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div className="md:self-end md:pb-0 pt-6 md:pt-0 flex gap-2">
-          <Button type="submit" className="flex-1 md:flex-none">
-            <Search className="mr-2 h-4 w-4" />
-            Buscar
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex-1 md:flex-none"
-          >
-            <Filter className="mr-2 h-4 w-4" />
-            Filtros
-          </Button>
-        </div>
-      </form>
+      <SearchForm
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        selectedCity={selectedCity}
+        handleCityChange={handleCityChange}
+        handleSearch={handleSearch}
+        toggleFilters={toggleFilters}
+      />
 
-      {showFilters && (
-        <div className="mt-4 pt-4 border-t border-border">
-          <h4 className="font-montserrat font-medium mb-2">Filtros Adicionais</h4>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <h5 className="text-sm font-medium mb-2">Tipo de Carregador</h5>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {chargingTypes.map((type) => (
-                  <div key={type} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`type-${type}`} 
-                      checked={selectedTypes.includes(type)}
-                      onCheckedChange={() => handleTypeToggle(type)}
-                    />
-                    <label 
-                      htmlFor={`type-${type}`}
-                      className="text-sm cursor-pointer"
-                    >
-                      {type}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <h5 className="text-sm font-medium mb-2">Disponibilidade</h5>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="availability-all" 
-                    checked={availability === "all"}
-                    onCheckedChange={() => setAvailability("all")}
-                  />
-                  <label 
-                    htmlFor="availability-all"
-                    className="text-sm cursor-pointer"
-                  >
-                    Todos
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="availability-available" 
-                    checked={availability === "available"}
-                    onCheckedChange={() => setAvailability("available")}
-                  />
-                  <label 
-                    htmlFor="availability-available"
-                    className="text-sm cursor-pointer"
-                  >
-                    Disponíveis agora
-                  </label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="availability-busy" 
-                    checked={availability === "busy"}
-                    onCheckedChange={() => setAvailability("busy")}
-                  />
-                  <label 
-                    htmlFor="availability-busy"
-                    className="text-sm cursor-pointer"
-                  >
-                    Ocupados
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-4 flex justify-end">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => {
-                setSelectedTypes([]);
-                setAvailability("all");
-                toast.success("Filtros resetados");
-              }}
-              className="mr-2"
-            >
-              Limpar Filtros
-            </Button>
-            <Button 
-              type="button" 
-              onClick={() => {
-                toast.success("Filtros aplicados");
-                // Aqui você implementaria a lógica para filtrar por tipo e disponibilidade
-                setShowFilters(false);
-              }}
-            >
-              Aplicar Filtros
-            </Button>
-          </div>
-        </div>
-      )}
+      <AdvancedFilters
+        showFilters={showFilters}
+        chargingTypes={CHARGING_TYPES}
+        selectedTypes={selectedTypes}
+        availability={availability}
+        handleTypeToggle={handleTypeToggle}
+        setAvailability={setAvailability}
+        resetFilters={resetFilters}
+        applyFilters={applyFilters}
+      />
     </div>
   );
 }

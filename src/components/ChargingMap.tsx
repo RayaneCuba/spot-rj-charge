@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { chargingStations } from "@/data/stations";
 import { MapContainer } from "./map/MapContainer";
@@ -5,6 +6,7 @@ import { StationList } from "./stations/StationList";
 import { Loader2, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
+import { useUserLocation } from "@/hooks/useUserLocation";
 
 interface ChargingMapProps {
   cityFilter?: string;
@@ -18,36 +20,22 @@ interface Station {
   lng: number;
   type: string;
   hours: string;
-  distance?: number; // Distância adicionada opcionalmente
+  distance?: number;
 }
 
 export function ChargingMap({ cityFilter = "" }: ChargingMapProps) {
   const [selectedStation, setSelectedStation] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [hasError, setHasError] = useState<boolean>(false);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [stationsWithDistance, setStationsWithDistance] = useState<Station[]>([]);
   const [showNearbyStations, setShowNearbyStations] = useState<boolean>(false);
+  
+  const { userLocation } = useUserLocation();
 
   // Filtrar estações por cidade
   const filteredStations = cityFilter && cityFilter !== "all"
     ? chargingStations.filter(station => station.city === cityFilter)
     : chargingStations;
-
-  // Obter localização do usuário
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation([latitude, longitude]);
-        },
-        (error) => {
-          console.error('Error getting user location:', error);
-        }
-      );
-    }
-  }, []);
 
   // Calcular distância entre coordenadas (usando a fórmula de Haversine)
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {

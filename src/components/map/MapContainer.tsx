@@ -1,9 +1,10 @@
 
-import { MapContainer as LeafletMap, TileLayer, useMap, Marker, Popup, MapContainerProps as LeafletMapProps } from 'react-leaflet';
+import { MapContainer as LeafletMap, TileLayer, useMap, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { StationMarker } from './StationMarker';
-import { useEffect, useState } from 'react';
-import L from 'leaflet';
+import { useEffect } from 'react';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { useMapInteraction } from '@/hooks/useMapInteraction';
 import { UserLocationMarker } from './UserLocationMarker';
 
 interface MapContainerProps {
@@ -32,37 +33,12 @@ function MapReady({ setMap }: { setMap: (map: L.Map) => void }) {
 }
 
 export function MapContainer({ stations, selectedStation, onSelectStation }: MapContainerProps) {
-  const [map, setMap] = useState<L.Map | null>(null);
-  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-
-  // Fly to selected station
-  useEffect(() => {
-    if (selectedStation && map) {
-      const station = stations.find(station => station.id === selectedStation);
-      if (station) {
-        map.flyTo([station.lat, station.lng], 15, {
-          duration: 2
-        });
-      }
-    }
-  }, [selectedStation, stations, map]);
-
-  // Get user location
-  useEffect(() => {
-    if (map && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation([latitude, longitude]);
-          map.flyTo([latitude, longitude], 14);
-        },
-        (error) => {
-          console.error('Error getting user location:', error);
-        },
-        { enableHighAccuracy: true }
-      );
-    }
-  }, [map]);
+  const { userLocation } = useUserLocation();
+  const { map, setMap } = useMapInteraction({
+    selectedStationId: selectedStation,
+    stations,
+    userLocation
+  });
 
   return (
     <LeafletMap

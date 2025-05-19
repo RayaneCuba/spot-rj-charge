@@ -1,5 +1,5 @@
 
-import { MapContainer as LeafletMap, TileLayer, useMap, Marker, Popup } from 'react-leaflet';
+import { MapContainer as LeafletMap, TileLayer, useMap, Marker, Popup, MapContainerProps as LeafletMapProps } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { StationMarker } from './StationMarker';
 import { useEffect, useState } from 'react';
@@ -53,14 +53,17 @@ export function MapContainer({ stations, selectedStation, onSelectStation }: Map
     }
   }, [map]);
 
+  // Function to handle map ready event with correct typing
+  const handleMapReady: LeafletMapProps['whenReady'] = ({ target }) => {
+    setMap(target);
+  };
+
   return (
     <LeafletMap
       center={[40.7128, -74.0060]} // Default to New York
       zoom={12}
       style={{ height: "500px", width: "100%" }}
-      whenReady={(e) => {
-        setMap(e.target);
-      }}
+      whenReady={handleMapReady}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

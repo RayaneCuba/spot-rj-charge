@@ -1,16 +1,57 @@
 
-import { MapPin, Menu, X, Car } from "lucide-react";
-import { Link } from "react-router-dom";
+import { MapPin, Menu, X, Car, User } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export function Header() {
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
   const toggleMenu = () => setMenuOpen(!menuOpen);
+  
+  useEffect(() => {
+    // Verificar se o usuário está logado
+    const auth = localStorage.getItem("userAuth");
+    setIsLoggedIn(auth === "true");
+  }, []);
+  
+  const handleLogin = () => {
+    // Simular login
+    localStorage.setItem("userAuth", "true");
+    setIsLoggedIn(true);
+    
+    toast({
+      title: "Login realizado",
+      description: "Você foi autenticado com sucesso.",
+      duration: 3000
+    });
+    
+    navigate("/dashboard");
+  };
+  
+  const handleLogout = () => {
+    // Simular logout
+    localStorage.removeItem("userAuth");
+    setIsLoggedIn(false);
+    
+    toast({
+      title: "Sessão encerrada",
+      description: "Você foi desconectado com sucesso.",
+      duration: 3000
+    });
+  };
+  
+  const handleDashboardClick = () => {
+    navigate("/dashboard");
+    if (menuOpen) setMenuOpen(false);
+  };
   
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -42,9 +83,40 @@ export function Header() {
                 >
                   Receber Atualizações
                 </Link>
+                
+                {isLoggedIn && (
+                  <button
+                    onClick={handleDashboardClick}
+                    className="flex items-center gap-2 text-foreground hover:text-primary transition-colors text-left"
+                  >
+                    <User className="h-4 w-4" /> Meu Dashboard
+                  </button>
+                )}
+                
                 <div className="flex items-center justify-between border-t pt-4 mt-2">
                   <span className="text-sm text-muted-foreground">Tema</span>
                   <ThemeToggle />
+                </div>
+                
+                <div className="pt-2">
+                  {isLoggedIn ? (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleLogout}
+                      className="w-full"
+                    >
+                      Sair da conta
+                    </Button>
+                  ) : (
+                    <Button 
+                      size="sm" 
+                      onClick={handleLogin}
+                      className="w-full"
+                    >
+                      <User className="mr-2 h-4 w-4" /> Entrar
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -55,6 +127,36 @@ export function Header() {
               Perguntas Frequentes
             </Link>
             <ThemeToggle />
+            
+            {isLoggedIn ? (
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/dashboard")}
+                  className="font-montserrat"
+                >
+                  <User className="mr-2 h-4 w-4" /> Meu Dashboard
+                </Button>
+                
+                <Button 
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="font-montserrat"
+                >
+                  Sair
+                </Button>
+              </div>
+            ) : (
+              <Button 
+                onClick={handleLogin}
+                className="bg-electric-green hover:bg-electric-green/90 text-white font-montserrat"
+              >
+                <User className="mr-2 h-4 w-4" /> Entrar
+              </Button>
+            )}
+            
             <Button asChild size="default" className="bg-electric-green hover:bg-electric-green/90 text-white font-montserrat">
               <Link to="/notify">
                 <MapPin className="mr-2 h-4 w-4" />

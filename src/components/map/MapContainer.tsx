@@ -58,7 +58,9 @@ export function MapContainer({ stations, selectedStation, onSelectStation }: Map
       center={[40.7128, -74.0060]} // Default to New York
       zoom={12}
       style={{ height: "500px", width: "100%" }}
-      whenReady={(e) => setMap(e.target)}
+      whenReady={(e) => {
+        setMap(e.target);
+      }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

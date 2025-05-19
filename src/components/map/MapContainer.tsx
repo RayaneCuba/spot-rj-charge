@@ -20,6 +20,17 @@ interface MapContainerProps {
   onSelectStation: (stationId: number) => void;
 }
 
+// Component to update map reference once it's ready
+function MapReady({ setMap }: { setMap: (map: L.Map) => void }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    setMap(map);
+  }, [map, setMap]);
+  
+  return null;
+}
+
 export function MapContainer({ stations, selectedStation, onSelectStation }: MapContainerProps) {
   const [map, setMap] = useState<L.Map | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
@@ -58,10 +69,10 @@ export function MapContainer({ stations, selectedStation, onSelectStation }: Map
       center={[40.7128, -74.0060]} // Default to New York
       zoom={12}
       style={{ height: "500px", width: "100%" }}
-      whenReady={(e) => {
-        setMap(e.target);
-      }}
     >
+      {/* Component to set map reference */}
+      <MapReady setMap={setMap} />
+      
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

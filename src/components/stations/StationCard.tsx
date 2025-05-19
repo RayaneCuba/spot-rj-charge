@@ -1,30 +1,39 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Navigation } from "lucide-react";
+import { MapPin, Navigation, Star } from "lucide-react";
+import { useFavorites } from "@/hooks/useFavorites";
+import { Station } from "@/types/Station";
+import { useChargingHistory } from "@/hooks/useChargingHistory";
 
 interface StationCardProps {
-  station: {
-    id: number;
-    name: string;
-    city: string;
-    type: string;
-    hours: string;
-    distance?: number;
-    availability?: "disponível" | "ocupado" | "offline";
-    connectorTypes?: string[];
-  };
+  station: Station;
   isSelected: boolean;
   onClick: (id: number) => void;
   onRouteClick?: (id: number) => void;
 }
 
 export function StationCard({ station, isSelected, onClick, onRouteClick }: StationCardProps) {
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { simulateCharging } = useChargingHistory();
+  
+  const isFav = isFavorite(station.id);
+
   const handleRouteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onRouteClick) {
       onRouteClick(station.id);
     }
+  };
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleFavorite(station);
+  };
+
+  const handleSimulateCharging = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    simulateCharging(station);
   };
 
   return (
@@ -37,7 +46,17 @@ export function StationCard({ station, isSelected, onClick, onRouteClick }: Stat
         <div className="flex items-start gap-2">
           <MapPin className={`h-5 w-5 mt-1 ${isSelected ? 'text-primary' : 'text-secondary'}`} />
           <div className="w-full">
-            <h3 className="font-montserrat font-semibold text-lg">{station.name}</h3>
+            <div className="flex justify-between items-start">
+              <h3 className="font-montserrat font-semibold text-lg">{station.name}</h3>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={`h-6 w-6 ${isFav ? 'text-amber-500' : 'text-muted-foreground'} hover:text-amber-600`}
+                onClick={handleFavoriteClick}
+              >
+                <Star className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
+              </Button>
+            </div>
             <p className="text-muted-foreground text-sm">{station.city}</p>
             <div className="mt-2 text-sm space-y-1">
               <div className="flex justify-between">
@@ -67,16 +86,26 @@ export function StationCard({ station, isSelected, onClick, onRouteClick }: Stat
               )}
             </div>
             
-            {onRouteClick && (
+            <div className="mt-3 flex gap-2">
+              {onRouteClick && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1" 
+                  onClick={handleRouteClick}
+                >
+                  <Navigation className="mr-1 h-4 w-4" /> Rota
+                </Button>
+              )}
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="mt-3 w-full" 
-                onClick={handleRouteClick}
+                className="flex-1" 
+                onClick={handleSimulateCharging}
               >
-                <Navigation className="mr-1 h-4 w-4" /> Traçar Rota
+                Simular carregamento
               </Button>
-            )}
+            </div>
           </div>
         </div>
       </CardContent>

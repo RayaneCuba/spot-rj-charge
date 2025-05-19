@@ -1,73 +1,71 @@
 
+import { useState, useEffect } from "react";
 import { MapPin } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { StationList } from "@/components/stations/StationList";
-import { useState, useEffect } from "react";
-import { Station } from "@/types/Station";
 import { useNavigate } from "react-router-dom";
+import { Station } from "@/types/Station";
+import { chargingStations } from "@/data/stations";
+import { useUserLocation } from "@/hooks/useUserLocation";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useChargingHistory } from "@/hooks/useChargingHistory";
 
 export function NearbyStations() {
   const navigate = useNavigate();
-  const [stations, setStations] = useState<Station[]>([]);
-  const [selectedStation, setSelectedStation] = useState<number | null>(null);
-  
-  // Mock para simular a busca de estações próximas
+  const { userLocation } = useUserLocation();
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { simulateCharging } = useChargingHistory();
+  const [nearbyStations, setNearbyStations] = useState<Station[]>([]);
+
+  // Calcular distância entre coordenadas (usando a fórmula de Haversine)
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+    const R = 6371; // Raio da Terra em km
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distância em km
+  };
+
   useEffect(() => {
-    // Simula carregamento de dados da API
-    setTimeout(() => {
-      setStations([
-        {
-          id: 101,
-          name: "Eletroposto Ipanema",
-          city: "Rio de Janeiro",
-          lat: -22.983,
-          lng: -43.198,
-          type: "Rápido",
-          hours: "24h",
-          distance: 1.2,
-          availability: "disponível",
-          connectorTypes: ["Tipo 2", "CCS"]
-        },
-        {
-          id: 102,
-          name: "Eletroposto Leblon",
-          city: "Rio de Janeiro",
-          lat: -22.986,
-          lng: -43.218,
-          type: "Ultra-rápido",
-          hours: "8h-22h",
-          distance: 2.4,
-          availability: "disponível",
-          connectorTypes: ["CHAdeMO", "CCS"]
-        },
-        {
-          id: 103,
-          name: "Eletroposto Copacabana",
-          city: "Rio de Janeiro",
-          lat: -22.970,
-          lng: -43.185,
-          type: "Semi-rápido",
-          hours: "24h",
-          distance: 3.5,
-          availability: "ocupado",
-          connectorTypes: ["Tipo 2"]
-        }
-      ]);
-    }, 500);
-  }, []);
+    if (userLocation) {
+      const [userLat, userLng] = userLocation;
+      
+      // Adicionar distância a cada estação
+      const stationsWithDistance = chargingStations.map(station => {
+        const distance = calculateDistance(userLat, userLng, station.lat, station.lng);
+        return { ...station, distance };
+      });
+      
+      // Ordenar por distância e pegar as 3 mais próximas
+      const closest = [...stationsWithDistance]
+        .sort((a, b) => (a.distance || 0) - (b.distance || 0))
+        .slice(0, 3);
+      
+      setNearbyStations(closest);
+    } else {
+      // Se não houver localização, mostrar 3 estações aleatórias
+      setNearbyStations(chargingStations.slice(0, 3));
+    }
+  }, [userLocation]);
 
-  const handleSelectStation = (id: number) => {
-    setSelectedStation(id);
-  };
-
-  const handleViewMap = () => {
+  const handleViewAllClick = () => {
     navigate("/");
   };
 
-  const handleRouteClick = (id: number) => {
-    // Para simular a navegação para o mapa com a rota já traçada
-    navigate("/");
+  const handleFavoriteToggle = (station: Station, e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleFavorite(station);
+  };
+
+  const handleSimulateCharging = (station: Station, e: React.MouseEvent) => {
+    e.stopPropagation();
+    simulateCharging(station);
   };
 
   return (
@@ -81,26 +79,58 @@ export function NearbyStations() {
           <Button 
             variant="ghost" 
             size="sm"
-            onClick={handleViewMap}
+            onClick={handleViewAllClick}
             className="text-xs"
           >
-            Ver no mapa
+            Ver mapa
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-        {stations.length > 0 ? (
-          <StationList 
-            stations={stations} 
-            selectedStation={selectedStation} 
-            onSelectStation={handleSelectStation}
-            onRouteClick={handleRouteClick}
-          />
+        {nearbyStations.length > 0 ? (
+          <div className="space-y-4">
+            {nearbyStations.map(station => (
+              <div 
+                key={station.id} 
+                className="border-b border-border last:border-0 pb-4 last:pb-0 hover:bg-muted/50 rounded-md cursor-pointer"
+                onClick={() => navigate("/")}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="font-medium text-sm">{station.name}</h4>
+                    <p className="text-xs text-muted-foreground">{station.city}</p>
+                  </div>
+                  <div className="text-xs font-medium">
+                    {station.distance !== undefined && (
+                      <span className="text-green-600">{station.distance.toFixed(1)} km</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-xs h-8"
+                    onClick={(e) => handleFavoriteToggle(station, e)}
+                  >
+                    {isFavorite(station.id) ? "Remover favorito" : "Adicionar favorito"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-xs h-8"
+                    onClick={(e) => handleSimulateCharging(station, e)}
+                  >
+                    Simular carregamento
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
-          <div className="flex items-center justify-center py-6">
-            <div className="animate-pulse text-muted-foreground">
-              Buscando estações próximas...
-            </div>
+          <div className="text-center py-6 text-muted-foreground">
+            <p>Nenhuma estação próxima encontrada.</p>
+            <p className="text-xs mt-1">Habilite sua localização para ver estações próximas.</p>
           </div>
         )}
       </CardContent>

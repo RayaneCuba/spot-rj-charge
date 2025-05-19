@@ -2,38 +2,20 @@
 import { Star } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Station } from "@/types/Station";
 import { useNavigate } from "react-router-dom";
+import { useFavorites } from "@/hooks/useFavorites";
 
 export function FavoriteStations() {
   const navigate = useNavigate();
+  const { favorites, removeFavorite } = useFavorites();
   
-  // Mock de estações favoritas - será substituído por dados reais posteriormente
-  const favorites: Station[] = [
-    {
-      id: 1,
-      name: "Eletroposto Shopping Rio Sul",
-      city: "Rio de Janeiro",
-      lat: -22.967,
-      lng: -43.186,
-      type: "Rápido",
-      hours: "24h",
-      connectorTypes: ["Tipo 2", "CCS"]
-    },
-    {
-      id: 2,
-      name: "Eletroposto Barra Shopping",
-      city: "Rio de Janeiro",
-      lat: -22.999,
-      lng: -43.365,
-      type: "Semi-rápido",
-      hours: "10h-22h",
-      connectorTypes: ["CHAdeMO", "Tipo 2"]
-    }
-  ];
-
   const handleViewAllClick = () => {
     navigate("/");
+  };
+
+  const handleRemoveFavorite = (stationId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    removeFavorite(stationId);
   };
 
   return (
@@ -67,8 +49,18 @@ export function FavoriteStations() {
                   <h4 className="font-medium text-sm">{station.name}</h4>
                   <p className="text-xs text-muted-foreground">{station.city}</p>
                 </div>
-                <div className="text-xs text-muted-foreground min-w-[50px] text-right">
-                  {station.type}
+                <div className="flex items-center gap-2">
+                  <div className="text-xs text-muted-foreground min-w-[50px] text-right">
+                    {station.type}
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 text-amber-500 hover:text-amber-600"
+                    onClick={(e) => handleRemoveFavorite(station.id, e)}
+                  >
+                    <Star className="h-4 w-4 fill-current" />
+                  </Button>
                 </div>
               </div>
             ))}

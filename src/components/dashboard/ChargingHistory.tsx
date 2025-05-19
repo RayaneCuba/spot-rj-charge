@@ -2,48 +2,11 @@
 import { Clock } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface ChargingSession {
-  id: number;
-  stationName: string;
-  date: string;
-  duration: number; // em minutos
-  energy: number; // em kWh
-  cost: number; // em reais
-  status: "completo" | "interrompido" | "em andamento";
-}
+import { useChargingHistory } from "@/hooks/useChargingHistory";
 
 export function ChargingHistory() {
-  // Mock de histórico de carregamentos - será substituído por dados reais posteriormente
-  const sessions: ChargingSession[] = [
-    {
-      id: 1,
-      stationName: "Eletroposto Shopping Rio Sul",
-      date: "2023-05-18",
-      duration: 45,
-      energy: 32.5,
-      cost: 62.8,
-      status: "completo"
-    },
-    {
-      id: 2,
-      stationName: "Eletroposto Barra Shopping",
-      date: "2023-05-15",
-      duration: 30,
-      energy: 18.2,
-      cost: 35.5,
-      status: "completo"
-    },
-    {
-      id: 3,
-      stationName: "Eletroposto Estacionamento Gávea",
-      date: "2023-05-10",
-      duration: 15,
-      energy: 8.5,
-      cost: 16.9,
-      status: "interrompido"
-    }
-  ];
+  const { getRecentSessions } = useChargingHistory();
+  const sessions = getRecentSessions(5); // Pegar até 5 sessões mais recentes
 
   const getStatusColor = (status: string) => {
     switch (status) {

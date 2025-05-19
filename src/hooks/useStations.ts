@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Station } from '@/types/Station';
 
 interface UseStationsProps {
@@ -8,15 +8,21 @@ interface UseStationsProps {
   cityFilter: string;
 }
 
+interface StationFilters {
+  types: string[];
+  availability: "all" | "available" | "busy";
+  maxDistance?: number;
+}
+
 export function useStations({ stations, userLocation, cityFilter }: UseStationsProps) {
   const [stationsWithDistance, setStationsWithDistance] = useState<Station[]>([]);
   const [showNearbyStations, setShowNearbyStations] = useState<boolean>(false);
+  const [filters, setFilters] = useState<StationFilters>({
+    types: [],
+    availability: "all",
+    maxDistance: undefined
+  });
   
-  // Filtrar estações por cidade
-  const filteredStations = cityFilter && cityFilter !== "all"
-    ? stations.filter(station => station.city === cityFilter)
-    : stations;
-
   // Calcular distância entre coordenadas (usando a fórmula de Haversine)
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
     const R = 6371; // Raio da Terra em km
@@ -34,10 +40,45 @@ export function useStations({ stations, userLocation, cityFilter }: UseStationsP
 
   // Calcular distâncias e ordenar estações quando a localização do usuário muda
   useEffect(() => {
+    let filteredStations = cityFilter && cityFilter !== "all"
+      ? stations.filter(station => station.city === cityFilter)
+      : stations;
+    
+    // Adicionar informações de disponibilidade simulada para demo
+    const stationsWithAvailability = filteredStations.map(station => {
+      const random = Math.random();
+      let availability: "disponível" | "ocupado" | "offline";
+      
+      if (random < 0.7) {
+        availability = "disponível";
+      } else if (random < 0.9) {
+        availability = "ocupado";
+      } else {
+        availability = "offline";
+      }
+      
+      // Adicionar tipos de conectores simulados
+      const connectorTypes = [];
+      if (station.type.includes("150kW") || station.type.includes("100kW")) {
+        connectorTypes.push("CCS");
+        if (Math.random() > 0.5) connectorTypes.push("CHAdeMO");
+      } else if (station.type.includes("50kW")) {
+        connectorTypes.push("CCS");
+        connectorTypes.push("CHAdeMO");
+      } else if (station.type.includes("22kW") || station.type.includes("11kW")) {
+        connectorTypes.push("Tipo 2");
+        if (Math.random() > 0.7) connectorTypes.push("Tipo 1");
+      } else {
+        connectorTypes.push("Tipo 2");
+      }
+      
+      return { ...station, availability, connectorTypes };
+    });
+    
     if (userLocation) {
       const [userLat, userLng] = userLocation;
       
-      const stationsWithDist = filteredStations.map(station => {
+      const stationsWithDist = stationsWithAvailability.map(station => {
         const distance = calculateDistance(userLat, userLng, station.lat, station.lng);
         return { ...station, distance };
       });
@@ -47,22 +88,59 @@ export function useStations({ stations, userLocation, cityFilter }: UseStationsP
       
       setStationsWithDistance(stationsWithDist);
     } else {
-      setStationsWithDistance(filteredStations);
+      setStationsWithDistance(stationsWithAvailability);
     }
-  }, [userLocation, filteredStations]);
+  }, [userLocation, stations, cityFilter]);
 
   const handleShowNearbyStations = () => {
     setShowNearbyStations(true);
   };
 
+  const updateFilters = (newFilters: Partial<StationFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
+
+  // Aplicar todos os filtros
+  const filteredStations = useMemo(() => {
+    let result = [...stationsWithDistance];
+    
+    // Filtrar por tipo de carregador
+    if (filters.types.length > 0) {
+      result = result.filter(station => 
+        station.connectorTypes?.some(type => filters.types.includes(type)) || false
+      );
+    }
+    
+    // Filtrar por disponibilidade
+    if (filters.availability !== "all") {
+      result = result.filter(station => 
+        filters.availability === "available" 
+          ? station.availability === "disponível"
+          : station.availability === "ocupado"
+      );
+    }
+    
+    // Filtrar por distância máxima
+    if (filters.maxDistance !== undefined) {
+      result = result.filter(station => 
+        (station.distance || Infinity) <= filters.maxDistance!
+      );
+    }
+    
+    return result;
+  }, [stationsWithDistance, filters]);
+
   // Determinar quais estações exibir
-  const displayStations = showNearbyStations && stationsWithDistance.length > 0
-    ? stationsWithDistance.slice(0, 5) // Mostrar apenas as 5 mais próximas
-    : stationsWithDistance;
+  const displayStations = showNearbyStations && filteredStations.length > 0
+    ? filteredStations.slice(0, 5) // Mostrar apenas as 5 mais próximas
+    : filteredStations;
 
   return {
+    allStations: stationsWithDistance,
     displayStations,
     showNearbyStations,
-    handleShowNearbyStations
+    handleShowNearbyStations,
+    filters,
+    updateFilters
   };
 }

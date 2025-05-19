@@ -118,3 +118,10 @@ export const cities = [
   "Paraty",
   "Angra dos Reis"
 ];
+
+export const connectorTypes = [
+  "CCS",
+  "CHAdeMO",
+  "Tipo 2",
+  "Tipo 1"
+];

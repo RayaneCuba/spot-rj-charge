@@ -1,6 +1,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Navigation } from "lucide-react";
 
 interface StationCardProps {
   station: {
@@ -10,12 +11,22 @@ interface StationCardProps {
     type: string;
     hours: string;
     distance?: number;
+    availability?: "disponível" | "ocupado" | "offline";
+    connectorTypes?: string[];
   };
   isSelected: boolean;
   onClick: (id: number) => void;
+  onRouteClick?: (id: number) => void;
 }
 
-export function StationCard({ station, isSelected, onClick }: StationCardProps) {
+export function StationCard({ station, isSelected, onClick, onRouteClick }: StationCardProps) {
+  const handleRouteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onRouteClick) {
+      onRouteClick(station.id);
+    }
+  };
+
   return (
     <Card 
       key={station.id} 
@@ -43,7 +54,29 @@ export function StationCard({ station, isSelected, onClick }: StationCardProps) 
                   <span>{station.distance.toFixed(1)} km</span>
                 </div>
               )}
+              {station.availability && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className={`${
+                    station.availability === "disponível" ? "text-green-500" :
+                    station.availability === "ocupado" ? "text-amber-500" : "text-gray-500"
+                  }`}>
+                    {station.availability}
+                  </span>
+                </div>
+              )}
             </div>
+            
+            {onRouteClick && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-3 w-full" 
+                onClick={handleRouteClick}
+              >
+                <Navigation className="mr-1 h-4 w-4" /> Traçar Rota
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

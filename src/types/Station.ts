@@ -8,4 +8,12 @@ export interface Station {
   type: string;
   hours: string;
   distance?: number;
+  availability?: "disponível" | "ocupado" | "offline";
+  connectorTypes?: string[];
+}
+
+export interface RouteInfo {
+  distance: number; // em km
+  duration: number; // em minutos
+  geometry: any; // GeoJSON
 }

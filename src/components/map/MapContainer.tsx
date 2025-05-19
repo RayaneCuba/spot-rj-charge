@@ -6,12 +6,14 @@ import { useEffect } from 'react';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useMapInteraction } from '@/hooks/useMapInteraction';
 import { UserLocationMarker } from './UserLocationMarker';
-import { Station } from '@/types/Station';
+import { RouteDisplay } from './RouteDisplay';
+import { Station, RouteInfo } from '@/types/Station';
 
 interface MapContainerProps {
   stations: Station[];
   selectedStation: number | null;
   onSelectStation: (stationId: number) => void;
+  routeInfo: RouteInfo | null;
 }
 
 // Componente para atualizar a referência do mapa uma vez que estiver pronto
@@ -25,7 +27,7 @@ function MapReady({ setMap }: { setMap: (map: L.Map) => void }) {
   return null;
 }
 
-export function MapContainer({ stations, selectedStation, onSelectStation }: MapContainerProps) {
+export function MapContainer({ stations, selectedStation, onSelectStation, routeInfo }: MapContainerProps) {
   const { userLocation } = useUserLocation();
   const { map, setMap } = useMapInteraction({
     selectedStationId: selectedStation,
@@ -51,6 +53,9 @@ export function MapContainer({ stations, selectedStation, onSelectStation }: Map
       {userLocation && (
         <UserLocationMarker position={userLocation} />
       )}
+      
+      {/* Exibição da rota */}
+      <RouteDisplay routeInfo={routeInfo} />
       
       {stations.map(station => (
         <StationMarker

@@ -31,7 +31,7 @@ const Index = () => {
             </div>
           </div>
           
-          <div id="charging-map" className="relative">
+          <div id="mapa-estacoes" className="relative">
             <div className="absolute -top-24" aria-hidden="true"></div>
             <div className="shadow-lg rounded-lg overflow-hidden border border-border">
               <ChargingMap cityFilter={cityFilter} />

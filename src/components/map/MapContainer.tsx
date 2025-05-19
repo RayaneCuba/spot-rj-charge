@@ -1,27 +1,20 @@
 
-import { MapContainer as LeafletMap, TileLayer, useMap, Marker, Popup } from 'react-leaflet';
+import { MapContainer as LeafletMap, TileLayer, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { StationMarker } from './StationMarker';
 import { useEffect } from 'react';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useMapInteraction } from '@/hooks/useMapInteraction';
 import { UserLocationMarker } from './UserLocationMarker';
+import { Station } from '@/types/Station';
 
 interface MapContainerProps {
-  stations: {
-    id: number;
-    name: string;
-    city: string;
-    type: string;
-    hours: string;
-    lat: number;
-    lng: number;
-  }[];
+  stations: Station[];
   selectedStation: number | null;
   onSelectStation: (stationId: number) => void;
 }
 
-// Component to update map reference once it's ready
+// Componente para atualizar a referência do mapa uma vez que estiver pronto
 function MapReady({ setMap }: { setMap: (map: L.Map) => void }) {
   const map = useMap();
   
@@ -42,11 +35,11 @@ export function MapContainer({ stations, selectedStation, onSelectStation }: Map
 
   return (
     <LeafletMap
-      center={[40.7128, -74.0060]} // Default to New York
+      center={[-22.9068, -43.1729]} // Padrão: Rio de Janeiro
       zoom={12}
       style={{ height: "500px", width: "100%" }}
     >
-      {/* Component to set map reference */}
+      {/* Componente para definir a referência do mapa */}
       <MapReady setMap={setMap} />
       
       <TileLayer
@@ -54,7 +47,7 @@ export function MapContainer({ stations, selectedStation, onSelectStation }: Map
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       
-      {/* User location marker */}
+      {/* Marcador de localização do usuário */}
       {userLocation && (
         <UserLocationMarker position={userLocation} />
       )}

@@ -12,6 +12,7 @@ interface StationMarkerProps {
     hours: string;
     lat: number;
     lng: number;
+    distance?: number;
   };
   isSelected: boolean;
   onClick: () => void;
@@ -22,7 +23,7 @@ export function StationMarker({ station, isSelected, onClick }: StationMarkerPro
   
   // Use effect to create the icon to avoid SSR issues
   useEffect(() => {
-    // Create a custom marker icon
+    // Criar ícone personalizado para o marcador
     const iconUrl = isSelected 
       ? "/marker-electric-green.svg" 
       : "/marker-blue.svg";
@@ -39,7 +40,7 @@ export function StationMarker({ station, isSelected, onClick }: StationMarkerPro
     setMarkerIcon(icon);
   }, [isSelected]);
   
-  // Only render the marker when the icon is loaded
+  // Renderizar apenas quando o ícone estiver carregado
   if (!markerIcon) return null;
 
   return (
@@ -56,6 +57,9 @@ export function StationMarker({ station, isSelected, onClick }: StationMarkerPro
           <p className="text-xs">{station.city}</p>
           <p className="text-xs">Tipo: {station.type}</p>
           <p className="text-xs">Horário: {station.hours}</p>
+          {station.distance !== undefined && (
+            <p className="text-xs">Distância: {station.distance.toFixed(1)} km</p>
+          )}
         </div>
       </Popup>
     </Marker>

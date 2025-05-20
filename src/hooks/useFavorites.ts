@@ -13,8 +13,10 @@ const VISITOR_FAVORITES: Station[] = [
     city: "São Paulo",
     lat: -23.550520,
     lng: -46.633308,
-    available: true,
-    type: "fast"
+    type: "fast",
+    hours: "24h",
+    availability: "disponível",
+    connectorTypes: ["Type 2", "CCS"]
   },
   {
     id: 5,
@@ -22,8 +24,10 @@ const VISITOR_FAVORITES: Station[] = [
     city: "São Paulo",
     lat: -23.595066,
     lng: -46.686631,
-    available: true,
-    type: "ultra-fast"
+    type: "ultra-fast",
+    hours: "10h-22h",
+    availability: "disponível",
+    connectorTypes: ["Type 2", "CCS", "CHAdeMO"]
   }
 ];
 
@@ -105,8 +109,7 @@ export function useFavorites() {
       setFavorites(prev => [...prev, station]);
       
       if (isVisitor) {
-        toast({
-          title: "Modo Visitante",
+        toast("Modo Visitante", {
           description: "Esta ação não será salva permanentemente."
         });
         return;
@@ -142,8 +145,7 @@ export function useFavorites() {
       setFavorites(prev => prev.filter(station => station.id !== stationId));
       
       if (isVisitor) {
-        toast({
-          title: "Modo Visitante",
+        toast("Modo Visitante", {
           description: "Esta ação não será salva permanentemente."
         });
         return;

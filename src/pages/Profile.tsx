@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -82,8 +81,7 @@ const Profile = () => {
     }
 
     if (isVisitor) {
-      toast({
-        title: "Modo Visitante",
+      toast("Modo Visitante", {
         description: "Não é possível excluir uma conta de visitante."
       });
       return;
@@ -123,8 +121,7 @@ const Profile = () => {
     try {
       // No modo visitante, apenas fingimos enviar
       if (isVisitor) {
-        toast({
-          title: "Feedback recebido",
+        toast("Feedback recebido", {
           description: "Obrigado por testar o aplicativo!"
         });
         form.reset();

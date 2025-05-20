@@ -28,7 +28,7 @@ export function useFavorites() {
 
           if (data) {
             // Formatar os dados para o formato esperado
-            const formattedStations = data.map(item => item.stations);
+            const formattedStations: Station[] = data.map(item => item.stations as Station);
             setFavorites(formattedStations);
           }
         } else {

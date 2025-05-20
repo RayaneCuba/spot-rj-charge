@@ -1,4 +1,3 @@
-
 import { UserCog, LogOut } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,8 +31,7 @@ export function AccountSettings() {
   };
 
   const handleSettings = () => {
-    toast({
-      title: "Em breve",
+    toast("Em breve", {
       description: "Configurações de conta serão implementadas em breve.",
       duration: 3000
     });

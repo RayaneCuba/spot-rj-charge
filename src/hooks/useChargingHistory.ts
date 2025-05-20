@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Station } from '@/types/Station';
@@ -35,35 +34,32 @@ export function useChargingHistory() {
               .select('*, stations(name)')
               .eq('user_id', user.id);
             
-            // Tente encadear métodos de forma segura
-            let data;
-            let error;
+            // Estratégia simplificada para lidar com os métodos encadeados
+            let result;
             
             try {
-              // Tentativa 1: usar o método order diretamente (padrão)
+              // Tentativa 1: Verificar se order existe e é uma função
               if (typeof query.order === 'function') {
                 const orderedQuery = query.order('date', { ascending: false });
+                
+                // Verificar se limit existe e é uma função
                 if (typeof orderedQuery.limit === 'function') {
-                  const result = await orderedQuery.limit(20);
-                  data = result.data;
-                  error = result.error;
+                  result = await orderedQuery.limit(20);
                 } else {
-                  const result = await orderedQuery;
-                  data = result.data;
-                  error = result.error;
+                  result = await orderedQuery;
                 }
               } else {
-                // Tentativa 2: usar o resultado direto
-                const result = await query;
-                data = result.data;
-                error = result.error;
+                // Caso order não exista, usar a consulta direta
+                result = await query;
               }
             } catch (e) {
-              // Fallback final: apenas obter os dados brutos
-              const result = await query;
-              data = result.data;
-              error = result.error;
+              // Fallback para consulta básica em caso de erro
+              result = await query;
             }
+            
+            // Extrair dados e erro do resultado
+            const data = result?.data;
+            const error = result?.error;
               
             if (error) throw error;
             

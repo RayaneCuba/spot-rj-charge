@@ -35,18 +35,24 @@ export const supabase = isLocalDevelopment
             error: null,
             // Método order mockado para ser chamável
             order: () => ({
-              limit: () => ({
+              limit: () => Promise.resolve({
                 data: [],
                 error: null,
               }),
+              // Result direto se limit não for chamado
+              data: [],
+              error: null
             }),
           }),
           // Método order disponível diretamente em select para suportar ambos os fluxos
           order: () => ({
-            limit: () => ({
+            limit: () => Promise.resolve({
               data: [],
               error: null,
             }),
+            // Result direto se limit não for chamado
+            data: [],
+            error: null
           }),
         }),
         insert: () => ({ error: null }),
@@ -54,7 +60,7 @@ export const supabase = isLocalDevelopment
           // Tornar o método eq uma função chamável
           eq: () => ({
             // Adicionar outro eq aninhado para suportar múltiplas chamadas de eq
-            eq: () => ({ 
+            eq: () => Promise.resolve({ 
               data: null,
               error: null 
             }),

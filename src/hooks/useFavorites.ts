@@ -28,7 +28,11 @@ export function useFavorites() {
 
           if (data) {
             // Formatar os dados para o formato esperado
-            const formattedStations: Station[] = data.map(item => item.stations as Station);
+            const formattedStations: Station[] = data.map(item => {
+              // Extract the station from the nested object
+              const station = item.stations as unknown as Station;
+              return station;
+            });
             setFavorites(formattedStations);
           }
         } else {

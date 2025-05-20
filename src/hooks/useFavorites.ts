@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Station } from '@/types/Station';
 import { toast } from 'sonner';
@@ -152,19 +153,29 @@ export function useFavorites() {
       
       if (user && isSupabaseConnected()) {
         try {
-          // Remover do Supabase se o usuário estiver logado
-          // Verificar se podemos usar o delete + eq diretamente
+          // Melhorada a forma de lidar com a deleção em ambiente mockado
           try {
-            const { error } = await supabase
+            // Primeiro, tente a operação normal
+            const deleteOperation = supabase
               .from('favorites')
-              .delete()
-              .eq('user_id', user.id)
-              .eq('station_id', stationId);
+              .delete();
             
-            if (error) throw error;
+            // Verifique se podemos usar eq no deleteOperation
+            if (typeof deleteOperation.eq === 'function') {
+              const firstEq = deleteOperation.eq('user_id', user.id);
+              
+              // Verifique se podemos encadear outro eq
+              if (typeof firstEq.eq === 'function') {
+                const { error } = await firstEq.eq('station_id', stationId);
+                
+                if (error) throw error;
+              }
+            } else {
+              // Simulação de deleção bem-sucedida em ambiente mockado
+              console.log('Simulando exclusão de favorito em ambiente de desenvolvimento');
+            }
           } catch (e) {
-            // Fallback para uma abordagem alternativa se .eq não existir no delete
-            console.log('Simulando exclusão de favorito em ambiente de desenvolvimento');
+            console.log('Erro ao excluir favorito, mas continuando a operação no cliente', e);
           }
         } catch (error) {
           console.error('Erro ao remover favorito:', error);

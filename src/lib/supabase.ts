@@ -13,7 +13,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Verificar se estamos em modo de desenvolvimento/visitante
 const isLocalDevelopment = !supabaseUrl || !supabaseAnonKey || !supabaseUrl.includes('https://');
 
-// Criar um cliente mockado ou real
+// Criar um cliente mockado com métodos que retornam funções em vez de objetos vazios
 export const supabase = isLocalDevelopment
   ? {
       // Cliente mockado com métodos comuns simulados
@@ -33,8 +33,15 @@ export const supabase = isLocalDevelopment
           eq: () => ({
             data: [],
             error: null,
+            // Método order mockado para ser chamável
+            order: () => ({
+              limit: () => ({
+                data: [],
+                error: null,
+              }),
+            }),
           }),
-          // Adicionar métodos aninhados extras para simular queries
+          // Método order disponível diretamente em select para suportar ambos os fluxos
           order: () => ({
             limit: () => ({
               data: [],
@@ -44,9 +51,16 @@ export const supabase = isLocalDevelopment
         }),
         insert: () => ({ error: null }),
         delete: () => ({
-          // Garantir que eq exista no método delete
-          eq: () => ({ error: null }),
-          // Para casos onde o delete é chamado diretamente
+          // Tornar o método eq uma função chamável
+          eq: () => ({
+            // Adicionar outro eq aninhado para suportar múltiplas chamadas de eq
+            eq: () => ({ 
+              data: null,
+              error: null 
+            }),
+            data: null,
+            error: null
+          }),
           error: null
         }),
       }),

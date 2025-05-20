@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Station } from '@/types/Station';
@@ -34,32 +33,36 @@ export function useChargingHistory() {
               .select('*, stations(name)')
               .eq('user_id', user.id);
             
-            // Verificar se conseguimos usar o método order
-            if (response && 'order' in response) {
-              const { data, error } = await response
-                .order('date', { ascending: false })
-                .limit(20);
-                
-              if (error) throw error;
+            // Verificar se conseguimos usar response.order (se existe)
+            let data;
+            let error;
+            
+            // Tentar usar o método order, se disponível
+            try {
+              const result = await response.order('date', { ascending: false }).limit(20);
+              data = result.data;
+              error = result.error;
+            } catch (e) {
+              // Fallback para o caso em que order/limit não estão disponíveis
+              data = response.data;
+              error = response.error;
+            }
               
-              if (data) {
-                // Formatar os dados para o formato esperado
-                const formattedSessions = data.map(item => ({
-                  id: item.id,
-                  stationId: item.station_id,
-                  stationName: item.stations.name,
-                  date: item.date,
-                  duration: item.duration,
-                  energy: item.energy,
-                  cost: item.cost,
-                  status: item.status
-                }));
-                setSessions(formattedSessions);
-              }
-            } else {
-              // Fallback para cliente mockado
-              const mockSessions = generateMockSessions(5);
-              setSessions(mockSessions);
+            if (error) throw error;
+            
+            if (data) {
+              // Formatar os dados para o formato esperado
+              const formattedSessions = data.map(item => ({
+                id: item.id,
+                stationId: item.station_id,
+                stationName: item.stations?.name || "Estação Desconhecida",
+                date: item.date,
+                duration: item.duration,
+                energy: item.energy,
+                cost: item.cost,
+                status: item.status
+              }));
+              setSessions(formattedSessions);
             }
           } catch (error) {
             console.error('Erro na consulta do Supabase:', error);

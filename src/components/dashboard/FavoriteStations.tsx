@@ -1,9 +1,8 @@
-
 import { Star } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { useFavorites } from "@/hooks/useFavorites";
+import { useFavorites } from "@/hooks/favorites";
 
 export function FavoriteStations() {
   const navigate = useNavigate();

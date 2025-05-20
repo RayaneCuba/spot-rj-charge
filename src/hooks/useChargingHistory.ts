@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Station } from '@/types/Station';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConnected } from '@/lib/supabase';
 import { useAuth } from './useAuth';
 
 export interface ChargingSession {
@@ -26,7 +26,7 @@ export function useChargingHistory() {
     const loadHistory = async () => {
       setIsLoading(true);
       try {
-        if (user) {
+        if (user && isSupabaseConnected()) {
           // Se o usuário estiver logado, carregar do Supabase
           const { data, error } = await supabase
             .from('charging_history')
@@ -117,7 +117,7 @@ export function useChargingHistory() {
     setSessions(prev => [newSession, ...prev].slice(0, 20));
     
     // Salvar no Supabase se o usuário estiver logado
-    if (user) {
+    if (user && isSupabaseConnected()) {
       try {
         const { error } = await supabase.from('charging_history').insert({
           user_id: user.id,

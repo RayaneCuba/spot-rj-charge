@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from 'react';
 import { Station } from '@/types/Station';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConnected } from '@/lib/supabase';
 import { useAuth } from './useAuth';
 
 // Mock de estações favoritas para modo visitante
@@ -44,8 +43,8 @@ export function useFavorites() {
         if (isVisitor) {
           // Usar dados mockados para visitante
           setFavorites(VISITOR_FAVORITES);
-        } else if (user && !isVisitor) {
-          // Se o usuário estiver logado, carregar do Supabase
+        } else if (user && isSupabaseConnected()) {
+          // Se o usuário estiver logado e o Supabase conectado, carregar do Supabase
           const { data, error } = await supabase
             .from('favorites')
             .select('station_id, stations(*)')
@@ -115,7 +114,7 @@ export function useFavorites() {
         return;
       }
       
-      if (user && !isVisitor) {
+      if (user && isSupabaseConnected()) {
         try {
           // Salvar no Supabase se o usuário estiver logado
           const { error } = await supabase.from('favorites').insert({
@@ -151,7 +150,7 @@ export function useFavorites() {
         return;
       }
       
-      if (user && !isVisitor) {
+      if (user && isSupabaseConnected()) {
         try {
           // Remover do Supabase se o usuário estiver logado
           const { error } = await supabase

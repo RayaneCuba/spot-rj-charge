@@ -1,6 +1,6 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConnected } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
@@ -45,6 +45,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Se não estiver usando Supabase real, sair cedo
+    if (!isSupabaseConnected()) {
+      setLoading(false);
+      return;
+    }
+
     // Configurar listener para mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, currentSession) => {
@@ -69,6 +75,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
+      
+      // Se não estiver usando Supabase real, simular login
+      if (!isSupabaseConnected()) {
+        setIsVisitor(true);
+        setUser(VISITOR_USER);
+        localStorage.setItem('visitorMode', 'true');
+        toast.success('Modo de demonstração ativado');
+        return;
+      }
+      
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       
       if (error) {

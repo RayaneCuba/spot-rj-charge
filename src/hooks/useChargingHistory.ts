@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Station } from '@/types/Station';
@@ -28,24 +29,40 @@ export function useChargingHistory() {
         if (user && isSupabaseConnected()) {
           // Se o usuário estiver logado, carregar do Supabase
           try {
-            const response = await supabase
+            // Primeiro, faça a consulta básica
+            const query = supabase
               .from('charging_history')
               .select('*, stations(name)')
               .eq('user_id', user.id);
             
-            // Verificar se conseguimos usar response.order (se existe)
+            // Tente encadear métodos de forma segura
             let data;
             let error;
             
-            // Tentar usar o método order, se disponível
             try {
-              const result = await response.order('date', { ascending: false }).limit(20);
+              // Tentativa 1: usar o método order diretamente (padrão)
+              if (typeof query.order === 'function') {
+                const orderedQuery = query.order('date', { ascending: false });
+                if (typeof orderedQuery.limit === 'function') {
+                  const result = await orderedQuery.limit(20);
+                  data = result.data;
+                  error = result.error;
+                } else {
+                  const result = await orderedQuery;
+                  data = result.data;
+                  error = result.error;
+                }
+              } else {
+                // Tentativa 2: usar o resultado direto
+                const result = await query;
+                data = result.data;
+                error = result.error;
+              }
+            } catch (e) {
+              // Fallback final: apenas obter os dados brutos
+              const result = await query;
               data = result.data;
               error = result.error;
-            } catch (e) {
-              // Fallback para o caso em que order/limit não estão disponíveis
-              data = response.data;
-              error = response.error;
             }
               
             if (error) throw error;

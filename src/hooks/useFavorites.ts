@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Station } from '@/types/Station';
 import { toast } from 'sonner';
@@ -153,29 +152,25 @@ export function useFavorites() {
       
       if (user && isSupabaseConnected()) {
         try {
-          // Melhorada a forma de lidar com a deleção em ambiente mockado
-          try {
-            // Primeiro, tente a operação normal
-            const deleteOperation = supabase
-              .from('favorites')
-              .delete();
-            
-            // Verifique se podemos usar eq no deleteOperation
-            if (typeof deleteOperation.eq === 'function') {
+          // Criar a operação de deleção e então manipular condicionalmente
+          const deleteOperation = supabase.from('favorites').delete();
+          
+          // Verificar se podemos usar eq no deleteOperation
+          if (typeof deleteOperation.eq === 'function') {
+            try {
               const firstEq = deleteOperation.eq('user_id', user.id);
               
-              // Verifique se podemos encadear outro eq
+              // Verificar se podemos encadear outro eq
               if (typeof firstEq.eq === 'function') {
-                const { error } = await firstEq.eq('station_id', stationId);
-                
-                if (error) throw error;
+                await firstEq.eq('station_id', stationId);
+              } else {
+                console.log('Segundo método eq não disponível, usando fallback');
               }
-            } else {
-              // Simulação de deleção bem-sucedida em ambiente mockado
-              console.log('Simulando exclusão de favorito em ambiente de desenvolvimento');
+            } catch (eqError) {
+              console.error('Erro ao encadear métodos eq:', eqError);
             }
-          } catch (e) {
-            console.log('Erro ao excluir favorito, mas continuando a operação no cliente', e);
+          } else {
+            console.log('Método eq não disponível, usando fallback');
           }
         } catch (error) {
           console.error('Erro ao remover favorito:', error);

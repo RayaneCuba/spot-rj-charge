@@ -5,31 +5,30 @@ import { Button } from "@/components/ui/button";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 export function AccountSettings() {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user, signOut } = useAuth();
+  
+  // Extrair iniciais e nome de usuário do email
+  const userEmail = user?.email || "";
+  const userName = userEmail.split('@')[0];
+  const userInitials = userName.substring(0, 2).toUpperCase();
+  
+  // Formatar data de criação da conta
+  const memberSince = user?.created_at 
+    ? new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date(user.created_at))
+    : "Membro recente";
 
-  // Mock de dados do usuário
-  const user = {
-    name: "João Silva",
-    email: "joao.silva@exemplo.com",
-    memberSince: "Janeiro 2023",
-    avatar: "" // URL para avatar se existir
-  };
-
-  const handleLogout = () => {
-    // Simular logout
-    localStorage.removeItem("userAuth");
-    
-    toast({
-      title: "Sessão encerrada",
-      description: "Você foi desconectado com sucesso.",
-      duration: 3000
-    });
-    
-    navigate("/");
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
   };
 
   const handleSettings = () => {
@@ -55,31 +54,29 @@ export function AccountSettings() {
               <HoverCardTrigger>
                 <Avatar>
                   <AvatarFallback className="bg-primary/10 text-primary">
-                    {user.name.substring(0, 2).toUpperCase()}
+                    {userInitials}
                   </AvatarFallback>
-                  {user.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
                 </Avatar>
               </HoverCardTrigger>
               <HoverCardContent align="start" className="w-64">
                 <div className="flex justify-between space-x-4">
                   <Avatar>
                     <AvatarFallback className="bg-primary/10 text-primary">
-                      {user.name.substring(0, 2).toUpperCase()}
+                      {userInitials}
                     </AvatarFallback>
-                    {user.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
                   </Avatar>
                   <div className="space-y-1">
-                    <h4 className="text-sm font-semibold">{user.name}</h4>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
-                    <p className="text-xs text-muted-foreground">Membro desde {user.memberSince}</p>
+                    <h4 className="text-sm font-semibold">{userName}</h4>
+                    <p className="text-xs text-muted-foreground">{userEmail}</p>
+                    <p className="text-xs text-muted-foreground">Membro desde {memberSince}</p>
                   </div>
                 </div>
               </HoverCardContent>
             </HoverCard>
             
             <div className="flex-1">
-              <p className="font-medium text-sm">{user.name}</p>
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              <p className="font-medium text-sm">{userName}</p>
+              <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
             </div>
           </div>
           

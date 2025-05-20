@@ -4,48 +4,29 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 export function Header() {
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { user, signOut } = useAuth();
   
   const toggleMenu = () => setMenuOpen(!menuOpen);
   
-  useEffect(() => {
-    // Verificar se o usuário está logado
-    const auth = localStorage.getItem("userAuth");
-    setIsLoggedIn(auth === "true");
-  }, []);
-  
   const handleLogin = () => {
-    // Simular login
-    localStorage.setItem("userAuth", "true");
-    setIsLoggedIn(true);
-    
-    toast({
-      title: "Login realizado",
-      description: "Você foi autenticado com sucesso.",
-      duration: 3000
-    });
-    
-    navigate("/dashboard");
+    navigate("/login");
   };
   
-  const handleLogout = () => {
-    // Simular logout
-    localStorage.removeItem("userAuth");
-    setIsLoggedIn(false);
-    
-    toast({
-      title: "Sessão encerrada",
-      description: "Você foi desconectado com sucesso.",
-      duration: 3000
-    });
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast.success("Sessão encerrada com sucesso");
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+    }
   };
   
   const handleDashboardClick = () => {
@@ -84,7 +65,7 @@ export function Header() {
                   Receber Atualizações
                 </Link>
                 
-                {isLoggedIn && (
+                {user && (
                   <button
                     onClick={handleDashboardClick}
                     className="flex items-center gap-2 text-foreground hover:text-primary transition-colors text-left"
@@ -99,7 +80,7 @@ export function Header() {
                 </div>
                 
                 <div className="pt-2">
-                  {isLoggedIn ? (
+                  {user ? (
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -128,7 +109,7 @@ export function Header() {
             </Link>
             <ThemeToggle />
             
-            {isLoggedIn ? (
+            {user ? (
               <div className="flex items-center gap-2">
                 <Button 
                   variant="outline"

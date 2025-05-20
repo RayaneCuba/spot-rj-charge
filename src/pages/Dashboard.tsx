@@ -8,26 +8,23 @@ import { FavoriteStations } from "@/components/dashboard/FavoriteStations";
 import { ChargingHistory } from "@/components/dashboard/ChargingHistory";
 import { NearbyStations } from "@/components/dashboard/NearbyStations";
 import { AccountSettings } from "@/components/dashboard/AccountSettings";
-
-// Mock da autenticação - será substituído por autenticação real posteriormente
-const isAuthenticated = () => {
-  return localStorage.getItem("userAuth") === "true";
-};
+import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     // Verificar autenticação
-    if (!isAuthenticated()) {
+    if (!authLoading && !user) {
       navigate("/");
-    } else {
+    } else if (!authLoading) {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, user, authLoading]);
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-xl">Carregando dashboard...</div>

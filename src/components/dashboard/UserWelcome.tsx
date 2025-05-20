@@ -1,15 +1,14 @@
 
 import { User } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 
 export function UserWelcome() {
-  // Mock de dados do usuário - será substituído por dados reais posteriormente
-  const user = {
-    name: "João Silva",
-    email: "joao.silva@exemplo.com",
-    lastLogin: "2023-05-19T10:30:00"
-  };
-
+  const { user } = useAuth();
+  
+  // Extrair o nome de usuário do email para exibição
+  const userName = user?.email ? user.email.split('@')[0] : 'Usuário';
+  
   return (
     <Card>
       <CardContent className="p-6">
@@ -19,7 +18,7 @@ export function UserWelcome() {
           </div>
           
           <div>
-            <h1 className="text-2xl font-bold">Bem-vindo, {user.name}!</h1>
+            <h1 className="text-2xl font-bold">Bem-vindo, {userName}!</h1>
             <p className="text-muted-foreground">
               É bom ver você novamente. Confira seu painel personalizado abaixo.
             </p>

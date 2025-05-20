@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Station } from '@/types/Station';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from './useAuth';
 
 export interface ChargingSession {
   id: number;
@@ -17,40 +19,84 @@ export interface ChargingSession {
 export function useChargingHistory() {
   const [sessions, setSessions] = useState<ChargingSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
-  // Carregar histórico do localStorage ao inicializar
+  // Carregar histórico do Supabase ou localStorage (fallback)
   useEffect(() => {
-    const loadHistory = () => {
+    const loadHistory = async () => {
+      setIsLoading(true);
       try {
-        const storedHistory = localStorage.getItem('chargingHistory');
-        if (storedHistory) {
-          setSessions(JSON.parse(storedHistory));
+        if (user) {
+          // Se o usuário estiver logado, carregar do Supabase
+          const { data, error } = await supabase
+            .from('charging_history')
+            .select('*, stations(name)')
+            .eq('user_id', user.id)
+            .order('date', { ascending: false })
+            .limit(20);
+
+          if (error) {
+            throw error;
+          }
+
+          if (data) {
+            // Formatar os dados para o formato esperado
+            const formattedSessions = data.map(item => ({
+              id: item.id,
+              stationId: item.station_id,
+              stationName: item.stations.name,
+              date: item.date,
+              duration: item.duration,
+              energy: item.energy,
+              cost: item.cost,
+              status: item.status
+            }));
+            setSessions(formattedSessions);
+          }
         } else {
-          // Se não existir histórico, criar alguns registros simulados
-          const mockSessions = generateMockSessions(3);
-          setSessions(mockSessions);
-          localStorage.setItem('chargingHistory', JSON.stringify(mockSessions));
+          // Caso contrário, usar localStorage como fallback
+          const storedHistory = localStorage.getItem('chargingHistory');
+          if (storedHistory) {
+            setSessions(JSON.parse(storedHistory));
+          } else {
+            // Se não existir histórico, criar alguns registros simulados
+            const mockSessions = generateMockSessions(3);
+            setSessions(mockSessions);
+            localStorage.setItem('chargingHistory', JSON.stringify(mockSessions));
+          }
         }
       } catch (error) {
         console.error('Erro ao carregar histórico:', error);
         toast.error('Não foi possível carregar seu histórico de carregamentos');
+        
+        // Tentar carregar do localStorage em caso de erro
+        try {
+          const storedHistory = localStorage.getItem('chargingHistory');
+          if (storedHistory) {
+            setSessions(JSON.parse(storedHistory));
+          } else {
+            // Se não existir histórico, criar alguns registros simulados
+            const mockSessions = generateMockSessions(3);
+            setSessions(mockSessions);
+          }
+        } catch {} // Ignorar erros do fallback
       } finally {
         setIsLoading(false);
       }
     };
 
     loadHistory();
-  }, []);
+  }, [user]);
 
-  // Salvar histórico no localStorage sempre que mudar
+  // Salvar histórico no localStorage quando mudar (fallback)
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !user) {
       localStorage.setItem('chargingHistory', JSON.stringify(sessions));
     }
-  }, [sessions, isLoading]);
+  }, [sessions, isLoading, user]);
 
   // Simular novo carregamento em uma estação
-  const simulateCharging = (station: Station) => {
+  const simulateCharging = async (station: Station) => {
     const now = new Date();
     const duration = Math.floor(Math.random() * 40) + 15; // 15-55 minutos
     const energy = parseFloat((Math.random() * 30 + 5).toFixed(1)); // 5-35 kWh
@@ -67,8 +113,29 @@ export function useChargingHistory() {
       status: Math.random() > 0.8 ? "interrompido" : "completo"
     };
 
-    // Adicionar ao início da lista para manter os mais recentes no topo
-    setSessions(prev => [newSession, ...prev].slice(0, 20)); // Manter só os 20 mais recentes
+    // Adicionar ao início da lista para UI imediata
+    setSessions(prev => [newSession, ...prev].slice(0, 20));
+    
+    // Salvar no Supabase se o usuário estiver logado
+    if (user) {
+      try {
+        const { error } = await supabase.from('charging_history').insert({
+          user_id: user.id,
+          station_id: station.id,
+          date: newSession.date,
+          duration: newSession.duration,
+          energy: newSession.energy,
+          cost: newSession.cost,
+          status: newSession.status
+        });
+        
+        if (error) throw error;
+      } catch (error) {
+        console.error('Erro ao salvar carregamento:', error);
+        toast.error('Erro ao registrar carregamento. Tente novamente.');
+        // Não reverter o estado local para não confundir o usuário
+      }
+    }
     
     toast.success(`Carregamento simulado em ${station.name}`);
     return newSession;

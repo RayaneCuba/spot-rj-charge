@@ -2,11 +2,16 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Obter variáveis de ambiente do Supabase ou usar valores mockados para desenvolvimento
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://mock.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'mock-key-for-development';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+// Verificar se temos credenciais válidas
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.log('Supabase mockado inicializado - sem credenciais de API');
+}
 
 // Verificar se estamos em modo de desenvolvimento/visitante
-const isLocalDevelopment = !supabaseUrl.includes('https://') || supabaseUrl === 'https://mock.supabase.co';
+const isLocalDevelopment = !supabaseUrl || !supabaseAnonKey || !supabaseUrl.includes('https://');
 
 // Criar um cliente mockado ou real
 export const supabase = isLocalDevelopment
@@ -18,6 +23,10 @@ export const supabase = isLocalDevelopment
         signOut: async () => ({ error: null }),
         getSession: async () => ({ data: { session: null } }),
         onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        // Simulação do método admin para uso em Profile.tsx
+        admin: {
+          deleteUser: async () => ({ data: {}, error: null })
+        }
       },
       from: (table: string) => ({
         select: () => ({
@@ -25,6 +34,7 @@ export const supabase = isLocalDevelopment
             data: [],
             error: null,
           }),
+          // Adicionar métodos aninhados extras para simular queries
           order: () => ({
             limit: () => ({
               data: [],
@@ -34,7 +44,10 @@ export const supabase = isLocalDevelopment
         }),
         insert: () => ({ error: null }),
         delete: () => ({
+          // Garantir que eq exista no método delete
           eq: () => ({ error: null }),
+          // Para casos onde o delete é chamado diretamente
+          error: null
         }),
       }),
     }

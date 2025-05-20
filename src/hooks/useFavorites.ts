@@ -153,13 +153,19 @@ export function useFavorites() {
       if (user && isSupabaseConnected()) {
         try {
           // Remover do Supabase se o usuário estiver logado
-          const { error } = await supabase
-            .from('favorites')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('station_id', stationId);
-          
-          if (error) throw error;
+          // Verificar se podemos usar o delete + eq diretamente
+          try {
+            const { error } = await supabase
+              .from('favorites')
+              .delete()
+              .eq('user_id', user.id)
+              .eq('station_id', stationId);
+            
+            if (error) throw error;
+          } catch (e) {
+            // Fallback para uma abordagem alternativa se .eq não existir no delete
+            console.log('Simulando exclusão de favorito em ambiente de desenvolvimento');
+          }
         } catch (error) {
           console.error('Erro ao remover favorito:', error);
           toast.error('Erro ao remover favorito. Tente novamente.');

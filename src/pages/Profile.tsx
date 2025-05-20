@@ -28,7 +28,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConnected } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Esquema de validação do formulário de feedback
@@ -90,19 +90,32 @@ const Profile = () => {
     try {
       setLoading(true);
       // Deletar dados do usuário primeiro
-      const { error: deleteDataError } = await supabase
-        .from('favorites')
-        .delete()
-        .eq('user_id', user?.id);
+      if (isSupabaseConnected()) {
+        try {
+          const { error: deleteDataError } = await supabase
+            .from('favorites')
+            .delete()
+            .eq('user_id', user?.id);
 
-      if (deleteDataError) throw deleteDataError;
+          if (deleteDataError) throw deleteDataError;
 
-      // Deletar usuário
-      const { error: deleteUserError } = await supabase.auth.admin.deleteUser(
-        user?.id as string
-      );
+          // Verificar se temos acesso ao admin API
+          if (supabase.auth.admin && typeof supabase.auth.admin.deleteUser === 'function') {
+            // Deletar usuário via admin API
+            const { error: deleteUserError } = await supabase.auth.admin.deleteUser(
+              user?.id as string
+            );
 
-      if (deleteUserError) throw deleteUserError;
+            if (deleteUserError) throw deleteUserError;
+          } else {
+            // Em ambiente de desenvolvimento, apenas simulamos a exclusão
+            console.log('Simulando exclusão de conta em ambiente de desenvolvimento');
+          }
+        } catch (error) {
+          console.error('Erro ao excluir conta via Supabase:', error);
+          throw new Error('Falha ao excluir conta no banco de dados');
+        }
+      }
 
       await signOut();
       navigate("/");

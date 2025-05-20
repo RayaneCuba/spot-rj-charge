@@ -1,3 +1,4 @@
+
 import { UserCog, LogOut } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,14 +7,17 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
 
 export function AccountSettings() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isVisitor } = useAuth();
+  const [loading, setLoading] = useState(false);
   
   // Extrair iniciais e nome de usuário do email
   const userEmail = user?.email || "";
-  const userName = userEmail.split('@')[0];
+  const userName = isVisitor ? "Visitante" : userEmail.split('@')[0];
   const userInitials = userName.substring(0, 2).toUpperCase();
   
   // Formatar data de criação da conta
@@ -23,18 +27,20 @@ export function AccountSettings() {
 
   const handleLogout = async () => {
     try {
+      setLoading(true);
       await signOut();
       navigate("/");
+      toast.success("Sessão encerrada com sucesso");
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
+      toast.error("Não foi possível encerrar a sessão");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSettings = () => {
-    toast("Em breve", {
-      description: "Configurações de conta serão implementadas em breve.",
-      duration: 3000
-    });
+    navigate("/profile");
   };
 
   return (
@@ -64,17 +70,38 @@ export function AccountSettings() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="space-y-1">
-                    <h4 className="text-sm font-semibold">{userName}</h4>
-                    <p className="text-xs text-muted-foreground">{userEmail}</p>
-                    <p className="text-xs text-muted-foreground">Membro desde {memberSince}</p>
+                    {loading ? (
+                      <>
+                        <Skeleton className="h-5 w-24" />
+                        <Skeleton className="h-4 w-36" />
+                        <Skeleton className="h-4 w-32" />
+                      </>
+                    ) : (
+                      <>
+                        <h4 className="text-sm font-semibold">{userName}</h4>
+                        <p className="text-xs text-muted-foreground">{userEmail}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {isVisitor ? "Modo Visitante" : `Membro desde ${memberSince}`}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </HoverCardContent>
             </HoverCard>
             
             <div className="flex-1">
-              <p className="font-medium text-sm">{userName}</p>
-              <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+              {loading ? (
+                <>
+                  <Skeleton className="h-5 w-24 mb-1" />
+                  <Skeleton className="h-4 w-40" />
+                </>
+              ) : (
+                <>
+                  <p className="font-medium text-sm">{userName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+                </>
+              )}
             </div>
           </div>
           
@@ -84,19 +111,27 @@ export function AccountSettings() {
               size="sm"
               onClick={handleSettings}
               className="w-full flex items-center"
+              disabled={loading}
             >
               <UserCog className="h-4 w-4 mr-2" />
-              Configurações
+              Perfil
             </Button>
             
             <Button 
               variant="outline" 
               size="sm"
               onClick={handleLogout}
+              disabled={loading}
               className="w-full flex items-center text-destructive hover:text-destructive hover:bg-destructive/10"
             >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
+              {loading ? (
+                <span className="animate-pulse">Saindo...</span>
+              ) : (
+                <>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sair
+                </>
+              )}
             </Button>
           </div>
         </div>

@@ -5,17 +5,42 @@ import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './useAuth';
 
+// Mock de estações favoritas para modo visitante
+const VISITOR_FAVORITES: Station[] = [
+  {
+    id: 1,
+    name: "Estação Central",
+    city: "São Paulo",
+    lat: -23.550520,
+    lng: -46.633308,
+    available: true,
+    type: "fast"
+  },
+  {
+    id: 5,
+    name: "Shopping Vila Olímpia",
+    city: "São Paulo",
+    lat: -23.595066,
+    lng: -46.686631,
+    available: true,
+    type: "ultra-fast"
+  }
+];
+
 export function useFavorites() {
   const [favorites, setFavorites] = useState<Station[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, isVisitor } = useAuth();
 
-  // Carregar favoritos do Supabase ou localStorage (fallback)
+  // Carregar favoritos do Supabase, localStorage ou mock para visitante
   useEffect(() => {
     const loadFavorites = async () => {
       setIsLoading(true);
       try {
-        if (user) {
+        if (isVisitor) {
+          // Usar dados mockados para visitante
+          setFavorites(VISITOR_FAVORITES);
+        } else if (user && !isVisitor) {
           // Se o usuário estiver logado, carregar do Supabase
           const { data, error } = await supabase
             .from('favorites')
@@ -59,14 +84,14 @@ export function useFavorites() {
     };
 
     loadFavorites();
-  }, [user]);
+  }, [user, isVisitor]);
 
   // Salvar favoritos no localStorage quando mudar (fallback)
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && !user && !isVisitor) {
       localStorage.setItem('favorites', JSON.stringify(favorites));
     }
-  }, [favorites, isLoading, user]);
+  }, [favorites, isLoading, user, isVisitor]);
 
   // Verificar se uma estação é favorita
   const isFavorite = (stationId: number): boolean => {
@@ -79,7 +104,15 @@ export function useFavorites() {
       // Adicionar ao estado para UI imediata
       setFavorites(prev => [...prev, station]);
       
-      if (user) {
+      if (isVisitor) {
+        toast({
+          title: "Modo Visitante",
+          description: "Esta ação não será salva permanentemente."
+        });
+        return;
+      }
+      
+      if (user && !isVisitor) {
         try {
           // Salvar no Supabase se o usuário estiver logado
           const { error } = await supabase.from('favorites').insert({
@@ -108,7 +141,15 @@ export function useFavorites() {
       // Remover do estado para UI imediata
       setFavorites(prev => prev.filter(station => station.id !== stationId));
       
-      if (user) {
+      if (isVisitor) {
+        toast({
+          title: "Modo Visitante",
+          description: "Esta ação não será salva permanentemente."
+        });
+        return;
+      }
+      
+      if (user && !isVisitor) {
         try {
           // Remover do Supabase se o usuário estiver logado
           const { error } = await supabase

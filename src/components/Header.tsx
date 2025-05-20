@@ -1,5 +1,5 @@
 
-import { MapPin, Menu, X, Car, User } from "lucide-react";
+import { MapPin, Menu, X, Car, User, LogIn } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -7,12 +7,19 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Header() {
   const isMobile = useIsMobile();
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, signInAsVisitor, isVisitor } = useAuth();
   
   const toggleMenu = () => setMenuOpen(!menuOpen);
   
@@ -30,6 +37,17 @@ export function Header() {
   };
   
   const handleDashboardClick = () => {
+    navigate("/dashboard");
+    if (menuOpen) setMenuOpen(false);
+  };
+
+  const handleProfileClick = () => {
+    navigate("/profile");
+    if (menuOpen) setMenuOpen(false);
+  };
+
+  const handleVisitorMode = () => {
+    signInAsVisitor();
     navigate("/dashboard");
     if (menuOpen) setMenuOpen(false);
   };
@@ -66,11 +84,28 @@ export function Header() {
                 </Link>
                 
                 {user && (
+                  <>
+                    <button
+                      onClick={handleDashboardClick}
+                      className="flex items-center gap-2 text-foreground hover:text-primary transition-colors text-left"
+                    >
+                      <User className="h-4 w-4" /> Meu Dashboard
+                    </button>
+                    <button
+                      onClick={handleProfileClick}
+                      className="flex items-center gap-2 text-foreground hover:text-primary transition-colors text-left"
+                    >
+                      <User className="h-4 w-4" /> Perfil
+                    </button>
+                  </>
+                )}
+                
+                {!user && (
                   <button
-                    onClick={handleDashboardClick}
+                    onClick={handleVisitorMode}
                     className="flex items-center gap-2 text-foreground hover:text-primary transition-colors text-left"
                   >
-                    <User className="h-4 w-4" /> Meu Dashboard
+                    <LogIn className="h-4 w-4" /> Modo Visitante
                   </button>
                 )}
                 
@@ -110,32 +145,48 @@ export function Header() {
             <ThemeToggle />
             
             {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="font-montserrat"
+                  >
+                    <User className="mr-2 h-4 w-4" /> 
+                    {isVisitor ? "Visitante" : "Minha Conta"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+                    Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/profile")}>
+                    Meu Perfil
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    Sair
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
               <div className="flex items-center gap-2">
                 <Button 
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate("/dashboard")}
+                  onClick={handleVisitorMode}
                   className="font-montserrat"
                 >
-                  <User className="mr-2 h-4 w-4" /> Meu Dashboard
+                  <LogIn className="mr-2 h-4 w-4" /> Modo Visitante
                 </Button>
                 
                 <Button 
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="font-montserrat"
+                  onClick={handleLogin}
+                  className="bg-electric-green hover:bg-electric-green/90 text-white font-montserrat"
                 >
-                  Sair
+                  <User className="mr-2 h-4 w-4" /> Entrar
                 </Button>
               </div>
-            ) : (
-              <Button 
-                onClick={handleLogin}
-                className="bg-electric-green hover:bg-electric-green/90 text-white font-montserrat"
-              >
-                <User className="mr-2 h-4 w-4" /> Entrar
-              </Button>
             )}
             
             <Button asChild size="default" className="bg-electric-green hover:bg-electric-green/90 text-white font-montserrat">

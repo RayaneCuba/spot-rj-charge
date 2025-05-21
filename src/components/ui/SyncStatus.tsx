@@ -4,7 +4,7 @@ import { Wifi, WifiOff, Clock, Check } from 'lucide-react';
 import { useNetworkStatus } from '@/lib/networkStatus';
 import { useSyncQueue } from '@/lib/syncQueue';
 
-interface SyncStatusProps {
+export interface SyncStatusProps {
   lastSyncAttempt: number | null;
   lastSuccessfulSync: number | null;
   isSyncing: boolean;

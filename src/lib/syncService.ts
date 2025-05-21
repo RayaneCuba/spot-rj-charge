@@ -3,6 +3,7 @@ import { supabase, isSupabaseConnected } from '@/lib/supabase';
 import { useNetworkStatus, checkActualConnectivity } from './networkStatus';
 import { useSyncQueue, processSyncQueue, SyncOperation } from './syncQueue';
 import { toast } from 'sonner';
+import { create } from 'zustand';
 
 // Função para sincronizar favoritos
 export const syncFavorites = async (userId: string, operation: SyncOperation) => {

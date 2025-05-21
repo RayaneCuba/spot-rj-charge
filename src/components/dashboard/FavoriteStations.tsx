@@ -1,4 +1,3 @@
-
 import { Star } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,6 @@ export function FavoriteStations() {
           
           <div className="flex items-center gap-3">
             <SyncStatus 
-              isOnline={syncStatus.isOnline}
               isSyncing={syncStatus.isSyncing}
               lastSyncAttempt={syncStatus.lastSyncAttempt}
               lastSuccessfulSync={syncStatus.lastSuccessfulSync}

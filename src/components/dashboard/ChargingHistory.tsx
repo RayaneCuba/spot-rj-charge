@@ -1,4 +1,3 @@
-
 import { Clock } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +31,6 @@ export function ChargingHistory() {
             Histórico de Carregamentos
           </CardTitle>
           <SyncStatus 
-            isOnline={syncStatus.isOnline}
             isSyncing={syncStatus.isSyncing}
             lastSyncAttempt={syncStatus.lastSyncAttempt}
             lastSuccessfulSync={syncStatus.lastSuccessfulSync}

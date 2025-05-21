@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase, isSupabaseConnected } from '@/lib/supabase';
 import { Session, User } from '@supabase/supabase-js';
@@ -41,20 +40,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!isSupabaseConnected() || isVisitor) return;
     
     try {
-      const { data, error } = await supabase.auth.refreshSession();
-      
-      if (error) {
-        // Se refresh falhar, fazer logout
-        console.error('Erro ao atualizar sessão:', error);
-        await signOut();
-        toast.error('Sua sessão expirou. Por favor, faça login novamente.');
-        return;
-      }
-      
-      // Atualizar sessão e usuário
-      if (data.session) {
-        setSession(data.session);
-        setUser(data.session.user);
+      // Para o Supabase real, usamos o método getSession() e depois refreshSession()
+      if (isSupabaseConnected()) {
+        const { data } = await supabase.auth.getSession();
+        
+        if (data.session) {
+          setSession(data.session);
+          setUser(data.session.user);
+        } else {
+          // Se não houver sessão, considere fazer logout
+          await signOut();
+          toast.error('Sua sessão expirou. Por favor, faça login novamente.');
+        }
       }
     } catch (error) {
       console.error('Erro ao atualizar sessão:', error);

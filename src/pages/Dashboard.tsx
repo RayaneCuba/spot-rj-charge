@@ -1,6 +1,5 @@
 
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { UserWelcome } from "@/components/dashboard/UserWelcome";
@@ -11,20 +10,9 @@ import { AccountSettings } from "@/components/dashboard/AccountSettings";
 import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const { user, loading: authLoading } = useAuth();
+  const { loading } = useAuth();
 
-  useEffect(() => {
-    // Verificar autenticação
-    if (!authLoading && !user) {
-      navigate("/");
-    } else if (!authLoading) {
-      setLoading(false);
-    }
-  }, [navigate, user, authLoading]);
-
-  if (loading || authLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse text-xl">Carregando dashboard...</div>

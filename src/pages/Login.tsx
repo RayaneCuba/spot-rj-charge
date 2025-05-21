@@ -1,6 +1,6 @@
 
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
@@ -13,16 +13,22 @@ import { Car } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { signIn, user } = useAuth();
+  const location = useLocation();
+  const { signIn, user, loading } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Extrair URL de redirecionamento dos parâmetros da query
+  const searchParams = new URLSearchParams(location.search);
+  const redirectUrl = searchParams.get('redirect') || '/dashboard';
 
   // Redirecionar se já estiver logado
-  if (user) {
-    navigate("/dashboard");
-    return null;
-  }
+  useEffect(() => {
+    if (!loading && user) {
+      navigate(redirectUrl);
+    }
+  }, [user, loading, navigate, redirectUrl]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +41,7 @@ const Login = () => {
     try {
       setIsLoading(true);
       await signIn(email, password);
-      navigate("/dashboard");
+      navigate(redirectUrl);
     } catch (error) {
       // Erro já tratado no hook
       console.error("Erro de login:", error);
@@ -43,6 +49,22 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+  // Se estiver carregando ou verificando autenticação, não mostrar o formulário ainda
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-pulse text-xl">Verificando sessão...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Se já estiver logado, não mostrar nada durante o redirecionamento
+  if (user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

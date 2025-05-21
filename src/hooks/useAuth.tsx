@@ -14,6 +14,7 @@ type AuthContextType = {
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInAsVisitor: () => void;
+  refreshSession: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,6 +36,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isVisitor, setIsVisitor] = useState(false);
 
+  // Função para atualizar a sessão
+  const refreshSession = async () => {
+    if (!isSupabaseConnected() || isVisitor) return;
+    
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        // Se refresh falhar, fazer logout
+        console.error('Erro ao atualizar sessão:', error);
+        await signOut();
+        toast.error('Sua sessão expirou. Por favor, faça login novamente.');
+        return;
+      }
+      
+      // Atualizar sessão e usuário
+      if (data.session) {
+        setSession(data.session);
+        setUser(data.session.user);
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar sessão:', error);
+    }
+  };
+
   useEffect(() => {
     // Verificar se já estava no modo visitante
     const visitorMode = localStorage.getItem('visitorMode') === 'true';
@@ -53,9 +79,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Configurar listener para mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, currentSession) => {
+      async (event, currentSession) => {
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
+        
+        // Verificar sessão expirada
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token de autenticação atualizado');
+        } else if (event === 'SIGNED_OUT') {
+          // Limpar dados da sessão
+          setIsVisitor(false);
+          localStorage.removeItem('visitorMode');
+        }
+        
         setLoading(false);
       }
     );
@@ -65,6 +101,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       setLoading(false);
+      
+      // Configurar refresher automático para sessões próximas da expiração
+      if (currentSession) {
+        const expiresAt = currentSession.expires_at;
+        if (expiresAt) {
+          const expirationTime = expiresAt * 1000; // Convert to milliseconds
+          const timeUntilExpiry = expirationTime - Date.now();
+          const refreshTime = timeUntilExpiry - (5 * 60 * 1000); // 5 minutos antes da expiração
+          
+          if (refreshTime > 0) {
+            setTimeout(() => refreshSession(), refreshTime);
+          }
+        }
+      }
     });
 
     return () => {
@@ -169,7 +219,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signIn,
     signUp,
     signOut,
-    signInAsVisitor
+    signInAsVisitor,
+    refreshSession
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

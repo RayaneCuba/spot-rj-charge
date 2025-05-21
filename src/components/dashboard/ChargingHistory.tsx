@@ -3,10 +3,31 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { useChargingHistory } from "@/hooks/useChargingHistory";
 import { ChargingHistoryHeader } from "./charging-history/ChargingHistoryHeader";
 import { SessionsList } from "./charging-history/SessionsList";
+import { useAsync } from "@/hooks/useAsync";
+import { useAuth } from "@/hooks/auth";
 
 export function ChargingHistory() {
   const { getRecentSessions, syncStatus } = useChargingHistory();
-  const sessions = getRecentSessions(5); // Pegar até 5 sessões mais recentes
+  const { user } = useAuth();
+  
+  const { 
+    data: sessions, 
+    isLoading, 
+    error,
+    retry
+  } = useAsync(
+    async () => {
+      // Em produção, isso buscaria do backend ou cache local
+      return getRecentSessions(5);
+    },
+    {
+      // Configurações para chamada
+      errorMessage: "Falha ao carregar histórico de carregamentos",
+      autoRetry: true,
+      maxRetries: 2,
+    },
+    [user?.id] // Recarregar quando o usuário mudar
+  );
 
   return (
     <Card>
@@ -14,7 +35,12 @@ export function ChargingHistory() {
         <ChargingHistoryHeader syncStatus={syncStatus} />
       </CardHeader>
       <CardContent>
-        <SessionsList sessions={sessions} />
+        <SessionsList 
+          sessions={sessions || []}
+          isLoading={isLoading}
+          error={error}
+          onRetry={retry}
+        />
       </CardContent>
     </Card>
   );

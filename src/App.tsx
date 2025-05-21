@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/auth";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ErrorProvider } from "@/context/ErrorContext";
 import Index from "./pages/Index";
 import FAQ from "./pages/FAQ";
 import NotifyPage from "./pages/NotifyPage";
@@ -17,7 +18,19 @@ import NotFound from "./pages/NotFound";
 import { useEffect } from "react";
 import { trackPageVisit } from "./config/environment";
 
-const queryClient = new QueryClient();
+// Configure the QueryClient with default error handling
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+      staleTime: 60000,
+    },
+    mutations: {
+      retry: 1,
+    },
+  },
+});
 
 // Componente para rastrear visitas de página
 const PageTracker = () => {
@@ -34,31 +47,33 @@ const PageTracker = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Rotas públicas */}
-            <Route path="/" element={<Index />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/notify" element={<NotifyPage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/signup" element={<Signup />} />
-            
-            {/* Rotas protegidas */}
-            <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/profile" element={<Profile />} />
-              {/* Adicione outras rotas protegidas aqui */}
-            </Route>
-            
-            {/* Rota de fallback para páginas não encontradas */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <PageTracker />
-        </BrowserRouter>
-      </AuthProvider>
+      <ErrorProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Rotas públicas */}
+              <Route path="/" element={<Index />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/notify" element={<NotifyPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              
+              {/* Rotas protegidas */}
+              <Route element={<ProtectedRoute />}>
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/profile" element={<Profile />} />
+                {/* Adicione outras rotas protegidas aqui */}
+              </Route>
+              
+              {/* Rota de fallback para páginas não encontradas */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <PageTracker />
+          </BrowserRouter>
+        </AuthProvider>
+      </ErrorProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

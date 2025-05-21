@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -7,7 +6,7 @@ import { FavoriteStations } from "@/components/dashboard/FavoriteStations";
 import { ChargingHistory } from "@/components/dashboard/ChargingHistory";
 import { NearbyStations } from "@/components/dashboard/NearbyStations";
 import { AccountSettings } from "@/components/dashboard/AccountSettings";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 
 const Dashboard = () => {
   const { loading } = useAuth();

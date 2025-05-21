@@ -9,24 +9,33 @@ import {
   loadHistoryFromSupabase, 
   loadHistoryFromLocalStorage,
   saveHistoryToLocalStorage,
-  saveChargingToSupabase 
 } from './chargingHistoryService';
+import { useNetworkStatus } from '@/lib/networkStatus';
+import { useSyncQueue } from '@/lib/syncQueue';
+import { useSyncStatus, processQueueWithConnectedUser } from '@/lib/syncService';
+import { generateMockSessions } from './chargingHistoryUtils';
 
 export function useChargingHistory() {
   const [sessions, setSessions] = useState<ChargingSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const { isOnline } = useNetworkStatus();
+  const { addOperation } = useSyncQueue();
+  const { isSyncing } = useSyncStatus();
 
   // Carregar histórico do Supabase ou localStorage (fallback)
   useEffect(() => {
     const loadHistory = async () => {
       setIsLoading(true);
       try {
-        if (user && isSupabaseConnected()) {
-          // Se o usuário estiver logado, carregar do Supabase
+        if (user && isSupabaseConnected() && isOnline) {
+          // Se o usuário estiver logado e online, carregar do Supabase
           try {
             const loadedSessions = await loadHistoryFromSupabase(user.id);
             setSessions(loadedSessions);
+            
+            // Salvar também no localStorage como cache
+            saveHistoryToLocalStorage(loadedSessions);
           } catch (error) {
             console.error('Fallback para mocks após erro na consulta:', error);
             // Fallback para mocks em caso de erro
@@ -59,14 +68,44 @@ export function useChargingHistory() {
     };
 
     loadHistory();
-  }, [user]);
+  }, [user, isOnline]);
 
   // Salvar histórico no localStorage quando mudar (fallback)
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading) {
       saveHistoryToLocalStorage(sessions);
     }
-  }, [sessions, isLoading, user]);
+  }, [sessions, isLoading]);
+
+  // Sincronizar fila quando o usuário estiver online
+  useEffect(() => {
+    // Não fazer nada se não houver usuário
+    if (!user) return;
+    
+    // Não tentar sincronizar se offline
+    if (!isOnline) return;
+    
+    // Sincronizar periódicamente quando online
+    const interval = setInterval(() => {
+      if (user && !isSyncing) {
+        processQueueWithConnectedUser(user.id)
+          .then(result => {
+            if (result.processedCount > 0) {
+              // Recarregar dados após sincronização bem-sucedida
+              loadHistoryFromSupabase(user.id)
+                .then(updatedSessions => {
+                  setSessions(updatedSessions);
+                  saveHistoryToLocalStorage(updatedSessions);
+                })
+                .catch(console.error);
+            }
+          })
+          .catch(console.error);
+      }
+    }, 5 * 60 * 1000); // 5 minutos
+    
+    return () => clearInterval(interval);
+  }, [user, isOnline]);
 
   // Simular novo carregamento em uma estação
   const simulateCharging = async (station: Station) => {
@@ -89,13 +128,25 @@ export function useChargingHistory() {
     // Adicionar ao início da lista para UI imediata
     setSessions(prev => [newSession, ...prev].slice(0, 20));
     
-    // Salvar no Supabase se o usuário estiver logado
-    if (user && isSupabaseConnected()) {
-      try {
-        await saveChargingToSupabase(user.id, newSession);
-      } catch (error) {
-        // Erro já tratado em saveChargingToSupabase
-        // Não reverter o estado local para não confundir o usuário
+    // Salvar no localStorage para persistência local
+    saveHistoryToLocalStorage([newSession, ...sessions].slice(0, 20));
+    
+    // Adicionar à fila de sincronização se o usuário estiver logado
+    if (user) {
+      addOperation({
+        entity: 'chargingHistory',
+        action: 'create',
+        data: newSession,
+        userId: user.id
+      });
+      
+      // Se online, tentar sincronizar imediatamente
+      if (isOnline && isSupabaseConnected()) {
+        processQueueWithConnectedUser(user.id).catch(console.error);
+      } else {
+        toast("Modo Offline", {
+          description: "Carregamento salvo localmente. Será sincronizado quando online."
+        });
       }
     }
     
@@ -112,10 +163,15 @@ export function useChargingHistory() {
     sessions,
     isLoading,
     simulateCharging,
-    getRecentSessions
+    getRecentSessions,
+    syncStatus: {
+      isSyncing,
+      isOnline,
+      lastSyncAttempt: useSyncStatus.getState().lastSyncAttempt,
+      lastSuccessfulSync: useSyncStatus.getState().lastSuccessfulSync
+    }
   };
 }
 
 // Re-exportar função generateMockSessions para manter compatibilidade
-import { generateMockSessions } from './chargingHistoryUtils';
 export { generateMockSessions };

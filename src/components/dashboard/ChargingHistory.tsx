@@ -3,9 +3,10 @@ import { Clock } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useChargingHistory } from "@/hooks/useChargingHistory";
+import { SyncStatus } from "@/components/ui/SyncStatus";
 
 export function ChargingHistory() {
-  const { getRecentSessions } = useChargingHistory();
+  const { getRecentSessions, syncStatus } = useChargingHistory();
   const sessions = getRecentSessions(5); // Pegar até 5 sessões mais recentes
 
   const getStatusColor = (status: string) => {
@@ -25,10 +26,19 @@ export function ChargingHistory() {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-medium flex items-center">
-          <Clock className="h-5 w-5 mr-2 text-blue-500" />
-          Histórico de Carregamentos
-        </CardTitle>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+          <CardTitle className="text-lg font-medium flex items-center">
+            <Clock className="h-5 w-5 mr-2 text-blue-500" />
+            Histórico de Carregamentos
+          </CardTitle>
+          <SyncStatus 
+            isOnline={syncStatus.isOnline}
+            isSyncing={syncStatus.isSyncing}
+            lastSyncAttempt={syncStatus.lastSyncAttempt}
+            lastSuccessfulSync={syncStatus.lastSuccessfulSync}
+            className="text-xs"
+          />
+        </div>
       </CardHeader>
       <CardContent>
         {sessions.length > 0 ? (

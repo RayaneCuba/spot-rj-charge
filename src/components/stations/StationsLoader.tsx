@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAsync } from '@/hooks/useAsync';
 import { useStations } from '@/hooks/useStations';
 import { useUserLocation } from '@/hooks/useUserLocation';
@@ -15,6 +15,7 @@ interface StationsLoaderProps {
 export function StationsLoader({ cityFilter }: StationsLoaderProps) {
   const { userLocation } = useUserLocation();
   const { reportNetworkError } = useError();
+  const [selectedStation, setSelectedStation] = useState<number | null>(null);
 
   // Simulação de uma função que busca estações
   const fetchStations = async (): Promise<Station[]> => {
@@ -36,7 +37,8 @@ export function StationsLoader({ cityFilter }: StationsLoaderProps) {
         lat: -23.5505,
         lng: -46.6333,
         type: "150kW",
-        city: "São Paulo"
+        city: "São Paulo",
+        hours: "24h"  // Added required hours property
       },
       {
         id: 2,
@@ -44,7 +46,8 @@ export function StationsLoader({ cityFilter }: StationsLoaderProps) {
         lat: -23.5605,
         lng: -46.6433,
         type: "50kW",
-        city: "São Paulo"
+        city: "São Paulo",
+        hours: "10h - 22h"  // Added required hours property
       },
       // Mais estações mockadas iriam aqui
     ];
@@ -79,6 +82,11 @@ export function StationsLoader({ cityFilter }: StationsLoaderProps) {
     cityFilter
   });
 
+  // Handler for selecting a station
+  const handleSelectStation = (id: number) => {
+    setSelectedStation(id);
+  };
+
   // Renderização baseada no estado
   if (isLoading) {
     return <LoadingState title="Carregando estações" description="Buscando estações próximas" />;
@@ -98,5 +106,12 @@ export function StationsLoader({ cityFilter }: StationsLoaderProps) {
     return <ErrorState title="Nenhuma estação encontrada" description="Tente mudar seus filtros de busca." variant="inline" />;
   }
   
-  return <StationList stations={displayStations} />;
+  return (
+    <StationList 
+      stations={displayStations} 
+      selectedStation={selectedStation}
+      onSelectStation={handleSelectStation}
+      // onRouteClick is optional according to the interface, so we don't need to provide it
+    />
+  );
 }

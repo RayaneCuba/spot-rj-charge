@@ -1,5 +1,7 @@
+
 import { toast } from 'sonner';
 import env from '@/config/environment';
+import React, { useEffect } from 'react';
 
 // Interface para eventos de performance
 interface PerformanceEvent {
@@ -284,6 +286,6 @@ export function withPerformanceTracking<P>(
       };
     }, []);
     
-    return <Component {...props} />;
+    return React.createElement(Component, props);
   };
 }

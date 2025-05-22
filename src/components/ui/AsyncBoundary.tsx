@@ -1,5 +1,5 @@
 
-import { Suspense, ErrorBoundary as ReactErrorBoundary } from 'react';
+import React, { Component, Suspense } from 'react';
 import { AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
 import { trackError } from '@/lib/performance-monitoring';
 import { cn } from '@/lib/utils';
@@ -38,6 +38,42 @@ const ErrorFallback = ({ error, resetError }: FallbackProps) => (
     </div>
   </div>
 );
+
+// Custom error boundary implementation since React.ErrorBoundary doesn't exist
+class ErrorBoundary extends Component<
+  { children: React.ReactNode; onError?: (error: Error) => void; fallbackRender: (props: { error: Error; resetErrorBoundary: () => void }) => React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    if (this.props.onError) {
+      this.props.onError(error);
+    }
+    console.error("Error caught by boundary:", error, errorInfo);
+  }
+
+  resetErrorBoundary = () => {
+    this.setState({ hasError: false, error: null });
+  }
+
+  render() {
+    if (this.state.hasError && this.state.error) {
+      return this.props.fallbackRender({
+        error: this.state.error,
+        resetErrorBoundary: this.resetErrorBoundary
+      });
+    }
+    return this.props.children;
+  }
+}
 
 const LoadingFallback = ({ 
   message = "Carregando...", 
@@ -88,7 +124,7 @@ export function AsyncBoundary({
   };
 
   return (
-    <ReactErrorBoundary
+    <ErrorBoundary
       fallbackRender={({ error, resetErrorBoundary }) => (
         <ErrorFallback error={error} resetError={resetErrorBoundary} />
       )}
@@ -97,6 +133,6 @@ export function AsyncBoundary({
       <Suspense fallback={<LoadingFallback message={loadingMessage} size={loadingSize} />}>
         {children}
       </Suspense>
-    </ReactErrorBoundary>
+    </ErrorBoundary>
   );
 }

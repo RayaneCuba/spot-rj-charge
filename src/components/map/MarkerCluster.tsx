@@ -8,6 +8,27 @@ import { useMap } from 'react-leaflet';
 import { StationMarker } from './StationMarker';
 import { Station } from '@/types/Station';
 
+// Add this declaration to properly augment the Leaflet type
+declare module 'leaflet' {
+  interface MarkerClusterGroupOptions {
+    chunkedLoading?: boolean;
+    spiderfyOnMaxZoom?: boolean;
+    showCoverageOnHover?: boolean;
+    zoomToBoundsOnClick?: boolean;
+    maxClusterRadius?: number | ((zoom: number) => number);
+    disableClusteringAtZoom?: number;
+  }
+
+  function markerClusterGroup(options?: MarkerClusterGroupOptions): MarkerClusterGroup;
+  
+  interface MarkerClusterGroup extends L.FeatureGroup {
+    clearLayers(): this;
+    addLayer(layer: L.Layer): this;
+    getLayers(): L.Layer[];
+    zoomToShowLayer(layer: L.Layer, callback?: () => void): void;
+  }
+}
+
 interface MarkerClusterProps {
   stations: Station[];
   selectedStation: number | null;

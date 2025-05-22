@@ -1,5 +1,6 @@
 
 import { MapContainer as LeafletMap, TileLayer, useMap } from 'react-leaflet';
+import L, { LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { memo, useEffect, useMemo } from 'react';
 import { useUserLocation } from '@/hooks/useUserLocation';
@@ -41,9 +42,9 @@ export const MapContainer = memo(function MapContainer({
     userLocation
   });
 
-  // Memoize center position
-  const defaultCenter = useMemo(() => 
-    userLocation ? userLocation : [-22.9068, -43.1729], 
+  // Memoize center position - ensuring it's a proper LatLngExpression
+  const defaultCenter: LatLngExpression = useMemo(() => 
+    userLocation ? (userLocation as LatLngExpression) : [-22.9068, -43.1729] as LatLngExpression, 
     [userLocation]
   );
 

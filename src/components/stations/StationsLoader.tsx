@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { useAsync } from '@/hooks/useAsync';
 import { useStations } from '@/hooks/useStations';
 import { useUserLocation } from '@/hooks/useUserLocation';
@@ -12,13 +12,13 @@ interface StationsLoaderProps {
   cityFilter: string;
 }
 
-export function StationsLoader({ cityFilter }: StationsLoaderProps) {
+export const StationsLoader = memo(function StationsLoader({ cityFilter }: StationsLoaderProps) {
   const { userLocation } = useUserLocation();
   const { reportNetworkError } = useError();
   const [selectedStation, setSelectedStation] = useState<number | null>(null);
 
   // Simulação de uma função que busca estações
-  const fetchStations = async (): Promise<Station[]> => {
+  const fetchStations = useCallback(async (): Promise<Station[]> => {
     // Esta é uma simulação - em produção, aqui seria uma chamada API real
     
     // Simulando uma chance de erro aleatória para teste
@@ -51,7 +51,7 @@ export function StationsLoader({ cityFilter }: StationsLoaderProps) {
       },
       // Mais estações mockadas iriam aqui
     ];
-  };
+  }, []);
   
   // Usando nosso hook useAsync para gerenciamento de estado
   const { 
@@ -82,10 +82,10 @@ export function StationsLoader({ cityFilter }: StationsLoaderProps) {
     cityFilter
   });
 
-  // Handler for selecting a station
-  const handleSelectStation = (id: number) => {
+  // Handler for selecting a station usando useCallback
+  const handleSelectStation = useCallback((id: number) => {
     setSelectedStation(id);
-  };
+  }, []);
 
   // Renderização baseada no estado
   if (isLoading) {
@@ -114,4 +114,4 @@ export function StationsLoader({ cityFilter }: StationsLoaderProps) {
       // onRouteClick is optional according to the interface, so we don't need to provide it
     />
   );
-}
+});

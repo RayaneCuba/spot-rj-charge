@@ -1,12 +1,12 @@
 
 import { MapContainer as LeafletMap, TileLayer, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { StationMarker } from './StationMarker';
-import { useEffect } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { useMapInteraction } from '@/hooks/useMapInteraction';
 import { UserLocationMarker } from './UserLocationMarker';
-import { RouteDisplay } from './RouteDisplay';
+import { LazyRouteDisplay } from './LazyRouteDisplay';
+import { MarkerCluster } from './MarkerCluster';
 import { Station, RouteInfo } from '@/types/Station';
 
 interface MapContainerProps {
@@ -27,7 +27,13 @@ function MapReady({ setMap }: { setMap: (map: L.Map) => void }) {
   return null;
 }
 
-export function MapContainer({ stations, selectedStation, onSelectStation, routeInfo }: MapContainerProps) {
+// Componente de mapa memoizado
+export const MapContainer = memo(function MapContainer({ 
+  stations, 
+  selectedStation, 
+  onSelectStation, 
+  routeInfo 
+}: MapContainerProps) {
   const { userLocation } = useUserLocation();
   const { map, setMap } = useMapInteraction({
     selectedStationId: selectedStation,
@@ -35,11 +41,24 @@ export function MapContainer({ stations, selectedStation, onSelectStation, route
     userLocation
   });
 
+  // Memoize center position
+  const defaultCenter = useMemo(() => 
+    userLocation ? userLocation : [-22.9068, -43.1729], 
+    [userLocation]
+  );
+
   return (
     <LeafletMap
-      center={[-22.9068, -43.1729]} // Padrão: Rio de Janeiro
+      center={defaultCenter}
       zoom={12}
       style={{ height: "500px", width: "100%" }}
+      preferCanvas={true} // Usar Canvas Renderer para melhor performance
+      renderer={L.canvas({ tolerance: 5 })} // Configuração adicional de performance
+      whenCreated={(mapInstance) => {
+        // Limitar framerate para dispositivos mais fracos
+        mapInstance.options.maxZoom = 18; // Limitar zoom máximo
+        return mapInstance;
+      }}
     >
       {/* Componente para definir a referência do mapa */}
       <MapReady setMap={setMap} />
@@ -47,6 +66,8 @@ export function MapContainer({ stations, selectedStation, onSelectStation, route
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        tileSize={256}
+        maxZoom={18}
       />
       
       {/* Marcador de localização do usuário */}
@@ -55,16 +76,14 @@ export function MapContainer({ stations, selectedStation, onSelectStation, route
       )}
       
       {/* Exibição da rota */}
-      <RouteDisplay routeInfo={routeInfo} />
+      <LazyRouteDisplay routeInfo={routeInfo} />
       
-      {stations.map(station => (
-        <StationMarker
-          key={station.id}
-          station={station}
-          isSelected={selectedStation === station.id}
-          onClick={() => onSelectStation(station.id)}
-        />
-      ))}
+      {/* Clustering de marcadores de estações */}
+      <MarkerCluster 
+        stations={stations} 
+        selectedStation={selectedStation} 
+        onSelectStation={onSelectStation}
+      />
     </LeafletMap>
   );
-}
+});

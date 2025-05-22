@@ -22,12 +22,20 @@ export function useChargingMapInitialization({
       // Medir tempo de inicialização
       const loadTime = performance.now() - startTime;
       trackPerformance("chargingMap.initialLoad", loadTime);
+      
+      // Log initial map load time for debugging
+      console.debug(`Map initialization time: ${loadTime.toFixed(2)}ms`);
     }, 800);
     
     return () => clearTimeout(timer);
   }, [setLoadingState]);
 
+  // Reset error state when component initializes
+  useEffect(() => {
+    setErrorState(false);
+  }, [setErrorState]);
+
   return {
-    // Adicione funções adicionais de inicialização se necessário
+    // Additional initialization functions can be added here
   };
 }

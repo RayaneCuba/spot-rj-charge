@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import L from 'leaflet';
 import 'leaflet.markercluster/dist/leaflet.markercluster.js';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
@@ -7,6 +7,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { useMap } from 'react-leaflet';
 import { StationMarker } from './StationMarker';
 import { Station } from '@/types/Station';
+import { trackPerformance } from '@/lib/performance-monitoring';
 
 // Add this declaration to properly augment the Leaflet type
 declare module 'leaflet' {
@@ -17,6 +18,9 @@ declare module 'leaflet' {
     zoomToBoundsOnClick?: boolean;
     maxClusterRadius?: number | ((zoom: number) => number);
     disableClusteringAtZoom?: number;
+    animate?: boolean;
+    chunkDelay?: number;
+    chunkProgress?: (processed: number, total: number, elapsed: number) => void;
   }
 
   function markerClusterGroup(options?: MarkerClusterGroupOptions): MarkerClusterGroup;
@@ -24,6 +28,7 @@ declare module 'leaflet' {
   interface MarkerClusterGroup extends L.FeatureGroup {
     clearLayers(): this;
     addLayer(layer: L.Layer): this;
+    addLayers(layers: L.Layer[]): this;
     getLayers(): L.Layer[];
     zoomToShowLayer(layer: L.Layer, callback?: () => void): void;
   }
@@ -46,10 +51,13 @@ export function MarkerCluster({
   const [clusterGroup, setClusterGroup] = useState<L.MarkerClusterGroup | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(map.getZoom());
   const [visibleMarkers, setVisibleMarkers] = useState<Station[]>([]);
+  const markersRef = useRef<{[id: number]: L.Marker}>({});
   
   // Inicializar o grupo de cluster uma vez
   useEffect(() => {
     if (!map) return;
+    
+    const startTime = performance.now();
     
     // Criação do grupo de cluster com opções de performance
     const cluster = L.markerClusterGroup({
@@ -61,7 +69,15 @@ export function MarkerCluster({
         // Ajustar o raio de clustering baseado no nível de zoom
         return zoom > 12 ? 40 : zoom > 10 ? 60 : 80;
       },
-      disableClusteringAtZoom: 13 // Não agrupar em níveis de zoom próximos
+      disableClusteringAtZoom: 13, // Não agrupar em níveis de zoom próximos
+      animate: true,
+      chunkDelay: 50, // Add delay between processing clusters for smoother rendering
+      chunkProgress: (processed, total) => {
+        if (processed === total) {
+          const endTime = performance.now();
+          trackPerformance('clusterInitialization', endTime - startTime);
+        }
+      }
     });
     
     map.addLayer(cluster);
@@ -82,36 +98,54 @@ export function MarkerCluster({
     };
   }, [map]);
   
-  // Atualizar marcadores visíveis baseado no zoom e estações
-  useEffect(() => {
+  // Memoize filtering logic to prevent unnecessary recalculations
+  const filteredStations = useMemo(() => {
     // Filtragem de estações baseada no zoom
-    const filteredStations = stations.filter(station => {
+    return stations.filter(station => {
       if (currentZoom < minZoom) {
         // Em níveis baixos de zoom, mostrar apenas estações principais
         return station.id % 3 === 0; // Exemplo simples: mostrar 1/3 das estações
       }
       return true;
     });
-    
-    setVisibleMarkers(filteredStations);
   }, [stations, currentZoom, minZoom]);
 
-  // Renderizar marcadores no grupo de cluster
+  // Update visible markers when filtered stations change
   useEffect(() => {
-    if (!clusterGroup || !map) return;
-    
-    // Limpar marcadores existentes
-    clusterGroup.clearLayers();
-    
-    // Adicionar novos marcadores no cluster
-    visibleMarkers.forEach(station => {
-      // Criar cada marcador usando o componente StationMarker
-      // Mas precisamos extrair apenas o objeto L.Marker dele
+    setVisibleMarkers(filteredStations);
+  }, [filteredStations]);
+
+  // Create all marker instances in one batch
+  const markers = useMemo(() => {
+    return visibleMarkers.map(station => {
+      const isSelected = selectedStation === station.id;
+      
+      // Reuse existing marker if possible
+      if (markersRef.current[station.id]) {
+        const marker = markersRef.current[station.id];
+        
+        // Update icon if selection state changed
+        const currentIcon = marker.getIcon();
+        const iconUrl = isSelected ? "/marker-electric-green.svg" : "/marker-blue.svg";
+        
+        if ((currentIcon as L.Icon).options.iconUrl !== iconUrl) {
+          marker.setIcon(new L.Icon({
+            iconUrl: iconUrl,
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowUrl: 'leaflet/dist/images/marker-shadow.png',
+            shadowSize: [41, 41]
+          }));
+        }
+        
+        return marker;
+      }
+      
+      // Create new marker if it doesn't exist
       const marker = new L.Marker([station.lat, station.lng], {
         icon: new L.Icon({
-          iconUrl: selectedStation === station.id 
-            ? "/marker-electric-green.svg" 
-            : "/marker-blue.svg",
+          iconUrl: isSelected ? "/marker-electric-green.svg" : "/marker-blue.svg",
           iconSize: [25, 41],
           iconAnchor: [12, 41],
           popupAnchor: [1, -34],
@@ -137,28 +171,39 @@ export function MarkerCluster({
         onSelectStation(station.id);
       });
       
-      clusterGroup.addLayer(marker);
+      // Store marker reference
+      markersRef.current[station.id] = marker;
+      
+      return marker;
     });
+  }, [visibleMarkers, selectedStation, onSelectStation]);
+
+  // Renderizar marcadores no grupo de cluster
+  useEffect(() => {
+    if (!clusterGroup || !map) return;
+    
+    const startTime = performance.now();
+    
+    // Limpar marcadores existentes
+    clusterGroup.clearLayers();
+    
+    // Add markers in batch for better performance
+    clusterGroup.addLayers(markers);
     
     // Centralizar no marcador selecionado se necessário
     if (selectedStation !== null) {
-      const selected = visibleMarkers.find(s => s.id === selectedStation);
-      if (selected) {
-        const marker = [...clusterGroup.getLayers()].find(
-          layer => layer instanceof L.Marker && 
-          layer.getLatLng().lat === selected.lat && 
-          layer.getLatLng().lng === selected.lng
-        );
-        if (marker) {
-          clusterGroup.zoomToShowLayer(marker);
-        }
+      const selectedMarker = markersRef.current[selectedStation];
+      if (selectedMarker) {
+        clusterGroup.zoomToShowLayer(selectedMarker);
       }
     }
+    
+    trackPerformance('markerRendering', performance.now() - startTime, { markerCount: markers.length });
     
     return () => {
       clusterGroup.clearLayers();
     };
-  }, [clusterGroup, visibleMarkers, selectedStation, onSelectStation, map]);
+  }, [clusterGroup, markers, selectedStation, map]);
 
   return null; // O componente não renderiza elementos React diretamente
 }

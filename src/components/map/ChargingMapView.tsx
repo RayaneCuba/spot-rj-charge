@@ -1,5 +1,5 @@
 
-import { memo, Suspense } from "react";
+import { memo, Suspense, useMemo } from "react";
 import { MapContainer } from "./MapContainer";
 import { LoadingState } from "../stations/LoadingState";
 import { RouteInfo, Station } from "@/types/Station";
@@ -19,6 +19,9 @@ export const ChargingMapView = memo(function ChargingMapView({
   routeInfo,
   isRoutingLoading
 }: ChargingMapViewProps) {
+  // Memoize stations to prevent unnecessary re-renders
+  const memoizedStations = useMemo(() => stations, [stations.length]);
+  
   return (
     <>
       {isRoutingLoading && (
@@ -29,7 +32,7 @@ export const ChargingMapView = memo(function ChargingMapView({
       
       <Suspense fallback={<div className="h-[500px] flex items-center justify-center">Carregando mapa...</div>}>
         <MapContainer 
-          stations={stations} 
+          stations={memoizedStations} 
           selectedStation={selectedStation} 
           onSelectStation={onSelectStation}
           routeInfo={routeInfo}

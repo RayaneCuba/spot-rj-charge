@@ -1,5 +1,5 @@
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { measurePerformanceAsync } from "@/lib/performance-monitoring";
 import { toast } from "sonner";
 import { Station } from "@/types/Station";
@@ -25,15 +25,29 @@ export function useChargingMapRouting({
     calculateRoute, 
     clearRoute 
   } = useRouting({ userLocation });
+  
+  // Use a ref to track active route calculations
+  const activeRouteCalc = useRef<{ stationId: number | null }>({ stationId: null });
 
   // Função para calcular rota para a estação usando useCallback
   const handleRouteCalculation = useCallback(async (stationId: number) => {
+    // Skip if already calculating for this station
+    if (activeRouteCalc.current.stationId === stationId && isRoutingLoading) {
+      console.debug('Route calculation already in progress for station:', stationId);
+      return;
+    }
+    
+    activeRouteCalc.current.stationId = stationId;
+    
     // Usar função de medição de performance para operações assíncronas
     return measurePerformanceAsync(
       `routeCalculation.${stationId}`, 
       async () => {
         const station = displayStations.find(s => s.id === stationId);
-        if (!station) return;
+        if (!station) {
+          console.error("Station not found:", stationId);
+          return;
+        }
         
         if (!userLocation) {
           toast.error("Ative sua localização para calcular a rota");
@@ -45,12 +59,19 @@ export function useChargingMapRouting({
           setSelectedStation(stationId);
         }
         
-        // Calcular a rota
-        await calculateRoute(station.lat, station.lng);
+        try {
+          // Calcular a rota
+          await calculateRoute(station.lat, station.lng);
+        } finally {
+          // Clear active calculation reference when done
+          if (activeRouteCalc.current.stationId === stationId) {
+            activeRouteCalc.current.stationId = null;
+          }
+        }
       },
       { stationId }
     );
-  }, [displayStations, userLocation, selectedStation, calculateRoute, setSelectedStation]);
+  }, [displayStations, userLocation, selectedStation, calculateRoute, setSelectedStation, isRoutingLoading]);
 
   return {
     routeInfo,

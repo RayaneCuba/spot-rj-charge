@@ -23,6 +23,9 @@ function MapReady({ setMap }: { setMap: (map: L.Map) => void }) {
   
   useEffect(() => {
     setMap(map);
+    
+    // Configurações adicionais de performance
+    map.options.maxZoom = 18; // Limitar zoom máximo
   }, [map, setMap]);
   
   return null;
@@ -55,11 +58,6 @@ export const MapContainer = memo(function MapContainer({
       style={{ height: "500px", width: "100%" }}
       preferCanvas={true} // Usar Canvas Renderer para melhor performance
       renderer={L.canvas({ tolerance: 5 })} // Configuração adicional de performance
-      whenCreated={(mapInstance) => {
-        // Limitar framerate para dispositivos mais fracos
-        mapInstance.options.maxZoom = 18; // Limitar zoom máximo
-        return mapInstance;
-      }}
     >
       {/* Componente para definir a referência do mapa */}
       <MapReady setMap={setMap} />

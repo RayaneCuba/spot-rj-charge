@@ -1,6 +1,7 @@
 
 import L from 'leaflet';
 import { trackPerformance } from '@/lib/performance-monitoring';
+import { MAP_CONSTANTS } from '@/constants/map';
 
 export function createClusterConfig(onProgress?: (processed: number, total: number) => void): L.MarkerClusterGroupOptions {
   return {
@@ -9,12 +10,16 @@ export function createClusterConfig(onProgress?: (processed: number, total: numb
     showCoverageOnHover: false,
     zoomToBoundsOnClick: true,
     maxClusterRadius: (zoom) => {
-      // Ajustar o raio de clustering baseado no nível de zoom
-      return zoom > 12 ? 40 : zoom > 10 ? 60 : 80;
+      // Use constants for cluster radius
+      return zoom > 12 
+        ? MAP_CONSTANTS.CLUSTER_RADIUS.HIGH_ZOOM 
+        : zoom > 10 
+        ? MAP_CONSTANTS.CLUSTER_RADIUS.MEDIUM_ZOOM 
+        : MAP_CONSTANTS.CLUSTER_RADIUS.LOW_ZOOM;
     },
-    disableClusteringAtZoom: 13, // Não agrupar em níveis de zoom próximos
+    disableClusteringAtZoom: MAP_CONSTANTS.DISABLE_CLUSTERING_ZOOM,
     animate: true,
-    chunkDelay: 50, // Add delay between processing clusters for smoother rendering
+    chunkDelay: 50,
     chunkProgress: (processed, total) => {
       if (onProgress) {
         onProgress(processed, total);

@@ -2,6 +2,7 @@
 import { useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { Station } from "@/types/Station";
+import { getUniqueConnectorTypes } from "@/utils/stationUtils";
 
 interface UseChargingMapFiltersProps {
   allStations: Station[];
@@ -23,19 +24,12 @@ export function useChargingMapFilters({
   filters
 }: UseChargingMapFiltersProps) {
   
-  // Memoizar cálculos que não mudam frequentemente
+  // Use utility function for connector types
   const uniqueConnectorTypes = useMemo(() => 
-    Array.from(
-      new Set(
-        allStations
-          .flatMap(station => station.connectorTypes || [])
-          .filter(Boolean)
-      )
-    ),
+    getUniqueConnectorTypes(allStations),
     [allStations]
   );
 
-  // Aplicar filtros usando useCallback
   const handleFilterChange = useCallback((newFilters: {
     types: string[];
     availability: "all" | "available" | "busy";

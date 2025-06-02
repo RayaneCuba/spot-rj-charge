@@ -1,9 +1,7 @@
 
-import { memo, useMemo } from "react";
-import { StationList } from "../stations/StationList";
-import { NearbyStationsAlert } from "../stations/NearbyStationsAlert";
-import { FilterPanel } from "../filters/FilterPanel";
-import { ChargingMapView } from "./ChargingMapView";
+import { memo } from "react";
+import { ChargingMapControls } from "./ChargingMapControls";
+import { ChargingMapMain } from "./ChargingMapMain";
 import { ErrorState } from "../stations/ErrorState";
 import { LoadingState } from "../stations/LoadingState";
 import { RouteInfo, Station } from "@/types/Station";
@@ -62,31 +60,22 @@ export const ChargingMapContent = memo(function ChargingMapContent({
 
   return (
     <>
-      <NearbyStationsAlert
+      <ChargingMapControls
         userLocation={userLocation}
         showNearbyStations={showNearbyStations}
-        onShowNearbyStations={handleShowNearbyStations}
+        handleShowNearbyStations={handleShowNearbyStations}
+        filters={filters}
+        uniqueConnectorTypes={uniqueConnectorTypes}
+        handleFilterChange={handleFilterChange}
       />
       
-      <FilterPanel 
-        onFilterChange={handleFilterChange}
-        connectorTypes={uniqueConnectorTypes}
-        initialFilters={filters}
-      />
-      
-      <ChargingMapView 
-        stations={displayStations} 
-        selectedStation={selectedStation} 
-        onSelectStation={handleStationSelect}
-        routeInfo={routeInfo}
+      <ChargingMapMain
         isRoutingLoading={isRoutingLoading}
-      />
-      
-      <StationList 
-        stations={displayStations} 
-        selectedStation={selectedStation} 
-        onSelectStation={handleStationSelect}
-        onRouteClick={handleRouteCalculation}
+        displayStations={displayStations}
+        selectedStation={selectedStation}
+        handleStationSelect={handleStationSelect}
+        routeInfo={routeInfo}
+        handleRouteCalculation={handleRouteCalculation}
       />
     </>
   );

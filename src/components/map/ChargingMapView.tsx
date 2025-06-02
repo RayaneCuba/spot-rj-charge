@@ -1,7 +1,7 @@
 
 import { memo, Suspense, useMemo } from "react";
 import { MapContainer } from "./MapContainer";
-import { LoadingState } from "../stations/LoadingState";
+import { MapSkeleton } from "@/components/ui/StationListSkeleton";
 import { RouteInfo, Station } from "@/types/Station";
 
 interface ChargingMapViewProps {
@@ -23,21 +23,35 @@ export const ChargingMapView = memo(function ChargingMapView({
   const memoizedStations = useMemo(() => stations, [stations.length]);
   
   return (
-    <>
+    <div className="space-y-4">
       {isRoutingLoading && (
-        <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-md mb-4">
-          <p className="text-sm text-center">Calculando rota...</p>
+        <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-md">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-sm text-center">Calculando rota...</p>
+          </div>
         </div>
       )}
       
-      <Suspense fallback={<div className="h-[500px] flex items-center justify-center">Carregando mapa...</div>}>
-        <MapContainer 
-          stations={memoizedStations} 
-          selectedStation={selectedStation} 
-          onSelectStation={onSelectStation}
-          routeInfo={routeInfo}
-        />
+      <Suspense fallback={<MapSkeleton />}>
+        <div className="relative">
+          <MapContainer 
+            stations={memoizedStations} 
+            selectedStation={selectedStation} 
+            onSelectStation={onSelectStation}
+            routeInfo={routeInfo}
+          />
+          
+          {/* Mobile overlay controls */}
+          <div className="absolute bottom-4 left-4 right-4 md:hidden">
+            <div className="bg-white/90 dark:bg-dark-blue/90 backdrop-blur-sm rounded-lg p-2 shadow-lg">
+              <p className="text-xs text-center text-muted-foreground">
+                {stations.length} estações encontradas
+              </p>
+            </div>
+          </div>
+        </div>
       </Suspense>
-    </>
+    </div>
   );
 });

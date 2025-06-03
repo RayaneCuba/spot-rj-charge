@@ -27,10 +27,11 @@ export function useFavoritesOperations(
   const addFavorite = async (station: Station) => {
     if (!isFavorite(station.id)) {
       // Adicionar ao estado para UI imediata
-      setFavorites(prev => [...prev, station]);
+      const updatedFavorites = [...favorites, station];
+      setFavorites(updatedFavorites);
       
       // Salvar no localStorage para persistência local
-      saveFavoritesToLocalStorage([...favorites, station]);
+      saveFavoritesToLocalStorage(updatedFavorites);
       
       if (isVisitor) {
         toast("Modo Visitante", {
@@ -81,10 +82,11 @@ export function useFavoritesOperations(
     const station = favorites.find(s => s.id === stationId);
     if (station) {
       // Remover do estado para UI imediata
-      setFavorites(prev => prev.filter(station => station.id !== stationId));
+      const updatedFavorites = favorites.filter(station => station.id !== stationId);
+      setFavorites(updatedFavorites);
       
       // Atualizar localStorage
-      saveFavoritesToLocalStorage(favorites.filter(s => s.id !== stationId));
+      saveFavoritesToLocalStorage(updatedFavorites);
       
       if (isVisitor) {
         toast("Modo Visitante", {

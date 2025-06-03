@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNetworkStatus } from '@/lib/networkStatus';
 import { useSyncQueue } from '@/lib/syncQueue';
@@ -16,8 +16,8 @@ export function useFavoritesSync(
   const { isOnline } = useNetworkStatus();
   const { isSyncing, setIsSyncing, setLastSyncAttempt, setLastSuccessfulSync } = useSyncStatus();
 
-  // Sincronizar fila quando o usuário estiver online
-  useEffect(() => {
+  // Memoize the sync function to prevent re-creation on every render
+  const syncQueue = useCallback(async () => {
     // Não fazer nada se estiver no modo visitante
     if (isVisitor) return;
     
@@ -27,41 +27,51 @@ export function useFavoritesSync(
     // Não tentar sincronizar se offline
     if (!isOnline) return;
     
-    // Processar a fila de sincronização ao ficar online
-    const syncQueue = async () => {
-      try {
-        if (isSyncing) return; // Prevenir execuções simultâneas
+    try {
+      if (isSyncing) return; // Prevenir execuções simultâneas
+      
+      setIsSyncing(true);
+      setLastSyncAttempt(Date.now());
+      
+      const result = await processQueueWithConnectedUser(user.id);
+      
+      if (result.processedCount > 0 && result.errorCount === 0) {
+        setLastSuccessfulSync(Date.now());
         
-        setIsSyncing(true);
-        setLastSyncAttempt(Date.now());
-        
-        const result = await processQueueWithConnectedUser(user.id);
-        
-        if (result.processedCount > 0 && result.errorCount === 0) {
-          setLastSuccessfulSync(Date.now());
-          
-          // Recarregar dados do servidor após sincronização bem-sucedida
-          if (isSupabaseConnected()) {
-            const updatedFavorites = await loadFavoritesFromSupabase(user.id);
-            setFavorites(updatedFavorites);
-            saveFavoritesToLocalStorage(updatedFavorites);
-          }
+        // Recarregar dados do servidor após sincronização bem-sucedida
+        if (isSupabaseConnected()) {
+          const updatedFavorites = await loadFavoritesFromSupabase(user.id);
+          setFavorites(updatedFavorites);
+          saveFavoritesToLocalStorage(updatedFavorites);
         }
-      } catch (error) {
-        console.error("Erro ao processar fila de sincronização:", error);
-      } finally {
-        setIsSyncing(false);
       }
-    };
-    
+    } catch (error) {
+      console.error("Erro ao processar fila de sincronização:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [user?.id, isOnline, isVisitor, isSyncing, setIsSyncing, setLastSyncAttempt, setLastSuccessfulSync, setFavorites]);
+
+  // Sincronizar fila quando o usuário estiver online
+  useEffect(() => {
     // Executar sincronização quando ficar online
-    syncQueue();
+    if (isOnline && user && !isVisitor && !isSyncing) {
+      syncQueue();
+    }
+  }, [isOnline, user?.id, isVisitor, isSyncing, syncQueue]);
+
+  // Configurar intervalo de verificação periódica
+  useEffect(() => {
+    if (!user || isVisitor || !isOnline) return;
     
-    // Configurar intervalo de verificação periódica
-    const interval = setInterval(syncQueue, 5 * 60 * 1000); // 5 minutos
+    const interval = setInterval(() => {
+      if (!isSyncing) {
+        syncQueue();
+      }
+    }, 5 * 60 * 1000); // 5 minutos
     
     return () => clearInterval(interval);
-  }, [user, isOnline, isVisitor, isSyncing, setIsSyncing, setLastSyncAttempt, setLastSuccessfulSync, setFavorites]);
+  }, [user?.id, isVisitor, isOnline, isSyncing, syncQueue]);
 
   return {
     isSyncing,

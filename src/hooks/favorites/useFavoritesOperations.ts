@@ -1,4 +1,5 @@
 
+import { useCallback } from 'react';
 import { Station } from '@/types/Station';
 import { toast } from 'sonner';
 import { isSupabaseConnected } from '@/lib/supabase';
@@ -19,12 +20,12 @@ export function useFavoritesOperations(
   const { addOperation } = useSyncQueue();
 
   // Verificar se uma estação é favorita
-  const isFavorite = (stationId: number): boolean => {
+  const isFavorite = useCallback((stationId: number): boolean => {
     return isStationFavorite(favorites, stationId);
-  };
+  }, [favorites]);
 
   // Adicionar estação aos favoritos
-  const addFavorite = async (station: Station) => {
+  const addFavorite = useCallback(async (station: Station) => {
     if (!isFavorite(station.id)) {
       // Adicionar ao estado para UI imediata
       const updatedFavorites = [...favorites, station];
@@ -75,10 +76,10 @@ export function useFavoritesOperations(
       
       toast.success(`${station.name} adicionada aos favoritos`);
     }
-  };
+  }, [favorites, isFavorite, setFavorites, isVisitor, user, isOnline, addOperation]);
 
   // Remover estação dos favoritos
-  const removeFavorite = async (stationId: number) => {
+  const removeFavorite = useCallback(async (stationId: number) => {
     const station = favorites.find(s => s.id === stationId);
     if (station) {
       // Remover do estado para UI imediata
@@ -130,16 +131,16 @@ export function useFavoritesOperations(
       
       toast.success(`${station.name} removida dos favoritos`);
     }
-  };
+  }, [favorites, setFavorites, isVisitor, user, isOnline, addOperation]);
 
   // Toggle favorito
-  const toggleFavorite = (station: Station) => {
+  const toggleFavorite = useCallback((station: Station) => {
     if (isFavorite(station.id)) {
       removeFavorite(station.id);
     } else {
       addFavorite(station);
     }
-  };
+  }, [isFavorite, removeFavorite, addFavorite]);
 
   return {
     isFavorite,

@@ -50,7 +50,7 @@ export function useFavoritesSync(
     } finally {
       setIsSyncing(false);
     }
-  }, [user?.id, isOnline, isVisitor, isSyncing, setIsSyncing, setLastSyncAttempt, setLastSuccessfulSync, setFavorites]);
+  }, [user?.id, isOnline, isVisitor, isSyncing, setIsSyncing, setLastSyncAttempt, setLastSuccessfulSync]);
 
   // Sincronizar fila quando o usuário estiver online
   useEffect(() => {

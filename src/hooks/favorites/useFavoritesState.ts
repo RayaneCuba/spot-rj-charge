@@ -13,10 +13,15 @@ import {
 } from './favoritesService';
 
 export function useFavoritesState() {
-  const [favorites, setFavorites] = useState<Station[]>([]);
+  const [favorites, setFavoritesInternal] = useState<Station[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user, isVisitor } = useAuth();
   const { isOnline } = useNetworkStatus();
+
+  // Memoize setFavorites to prevent re-renders
+  const setFavorites = useCallback((newFavorites: Station[]) => {
+    setFavoritesInternal(newFavorites);
+  }, []);
 
   // Memoize the loadFavorites function to prevent re-creation
   const loadFavorites = useCallback(async () => {
@@ -24,18 +29,18 @@ export function useFavoritesState() {
     try {
       if (isVisitor) {
         // Usar dados mockados para visitante
-        setFavorites(getFavoritesByUserType(true));
+        setFavoritesInternal(getFavoritesByUserType(true));
       } else if (user && isSupabaseConnected() && isOnline) {
         // Se o usuário estiver logado, online e o Supabase conectado, carregar do Supabase
         const formattedStations = await loadFavoritesFromSupabase(user.id);
-        setFavorites(formattedStations);
+        setFavoritesInternal(formattedStations);
         
         // Salvar também no localStorage como cache
         saveFavoritesToLocalStorage(formattedStations);
       } else {
         // Caso contrário, usar localStorage como fallback
         const storedFavorites = loadFavoritesFromLocalStorage();
-        setFavorites(storedFavorites);
+        setFavoritesInternal(storedFavorites);
       }
     } catch (error) {
       console.error('Erro ao carregar favoritos:', error);
@@ -44,7 +49,7 @@ export function useFavoritesState() {
       // Tentar carregar do localStorage em caso de erro
       try {
         const storedFavorites = loadFavoritesFromLocalStorage();
-        setFavorites(storedFavorites);
+        setFavoritesInternal(storedFavorites);
       } catch {} // Ignorar erros do fallback
     } finally {
       setIsLoading(false);

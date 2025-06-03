@@ -2,19 +2,22 @@
 import { Cloud, CloudOff, Loader2, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface SyncStatusProps {
   isSyncing: boolean;
   lastSyncAttempt?: number | null;
   lastSuccessfulSync?: number | null;
   isOnline?: boolean;
+  className?: string;
 }
 
 export function SyncStatus({ 
   isSyncing, 
   lastSyncAttempt, 
   lastSuccessfulSync,
-  isOnline = true 
+  isOnline = true,
+  className 
 }: SyncStatusProps) {
   const getStatusInfo = () => {
     if (!isOnline) {
@@ -61,7 +64,7 @@ export function SyncStatus({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge variant={status.variant} className="text-xs gap-1">
+          <Badge variant={status.variant} className={cn("text-xs gap-1", className)}>
             {status.icon}
             {status.text}
           </Badge>

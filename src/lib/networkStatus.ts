@@ -17,5 +17,31 @@ export function useNetworkStatus() {
     };
   }, []);
 
-  return { isOnline };
+  return { isOnline, setIsOnline };
+}
+
+export async function checkActualConnectivity(): Promise<boolean> {
+  try {
+    // Try to fetch a small resource to verify actual connectivity
+    const response = await fetch('/favicon.ico', {
+      method: 'HEAD',
+      cache: 'no-cache',
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+export function setupNetworkListeners() {
+  console.log('Network status listeners configured');
+  
+  // Additional network monitoring setup can be added here
+  window.addEventListener('online', () => {
+    console.log('🌐 Network: Online');
+  });
+  
+  window.addEventListener('offline', () => {
+    console.log('🌐 Network: Offline');
+  });
 }

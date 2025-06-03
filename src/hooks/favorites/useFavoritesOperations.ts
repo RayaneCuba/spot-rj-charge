@@ -1,0 +1,148 @@
+
+import { Station } from '@/types/Station';
+import { toast } from 'sonner';
+import { isSupabaseConnected } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth';
+import { useNetworkStatus } from '@/lib/networkStatus';
+import { useSyncQueue } from '@/lib/syncQueue';
+import { processQueueWithConnectedUser } from '@/lib/syncService';
+import { saveFavoritesToLocalStorage } from './favoritesService';
+import { isStationFavorite } from './favoritesUtils';
+
+export function useFavoritesOperations(
+  favorites: Station[],
+  setFavorites: (favorites: Station[]) => void,
+  isVisitor: boolean
+) {
+  const { user } = useAuth();
+  const { isOnline } = useNetworkStatus();
+  const { addOperation } = useSyncQueue();
+
+  // Verificar se uma estação é favorita
+  const isFavorite = (stationId: number): boolean => {
+    return isStationFavorite(favorites, stationId);
+  };
+
+  // Adicionar estação aos favoritos
+  const addFavorite = async (station: Station) => {
+    if (!isFavorite(station.id)) {
+      // Adicionar ao estado para UI imediata
+      setFavorites(prev => [...prev, station]);
+      
+      // Salvar no localStorage para persistência local
+      saveFavoritesToLocalStorage([...favorites, station]);
+      
+      if (isVisitor) {
+        toast("Modo Visitante", {
+          description: "Esta ação não será salva permanentemente."
+        });
+        return;
+      }
+      
+      if (user) {
+        // Salvar no Supabase se online, ou adicionar à fila de sincronização
+        if (isOnline && isSupabaseConnected()) {
+          try {
+            // Adicionar operação à fila de sincronização
+            addOperation({
+              entity: 'favorites',
+              action: 'create',
+              data: { stationId: station.id },
+              userId: user.id
+            });
+            
+            // Iniciar sincronização imediata
+            processQueueWithConnectedUser(user.id).catch(console.error);
+          } catch (error) {
+            console.error('Erro ao salvar favorito:', error);
+            toast.error('Erro ao salvar favorito. Será sincronizado automaticamente quando online.');
+          }
+        } else {
+          // Adicionar à fila para sincronização posterior quando offline
+          addOperation({
+            entity: 'favorites',
+            action: 'create',
+            data: { stationId: station.id },
+            userId: user.id
+          });
+          
+          toast("Modo Offline", {
+            description: "Favoritado localmente. Será sincronizado quando online."
+          });
+        }
+      }
+      
+      toast.success(`${station.name} adicionada aos favoritos`);
+    }
+  };
+
+  // Remover estação dos favoritos
+  const removeFavorite = async (stationId: number) => {
+    const station = favorites.find(s => s.id === stationId);
+    if (station) {
+      // Remover do estado para UI imediata
+      setFavorites(prev => prev.filter(station => station.id !== stationId));
+      
+      // Atualizar localStorage
+      saveFavoritesToLocalStorage(favorites.filter(s => s.id !== stationId));
+      
+      if (isVisitor) {
+        toast("Modo Visitante", {
+          description: "Esta ação não será salva permanentemente."
+        });
+        return;
+      }
+      
+      if (user) {
+        // Remover do Supabase ou adicionar à fila de sincronização
+        if (isOnline && isSupabaseConnected()) {
+          try {
+            // Adicionar operação à fila de sincronização
+            addOperation({
+              entity: 'favorites',
+              action: 'delete',
+              data: { stationId },
+              userId: user.id
+            });
+            
+            // Iniciar sincronização imediata
+            processQueueWithConnectedUser(user.id).catch(console.error);
+          } catch (error) {
+            console.error('Erro ao remover favorito:', error);
+            toast.error('Erro ao remover favorito. Será sincronizado quando online.');
+          }
+        } else {
+          // Adicionar à fila para sincronização posterior
+          addOperation({
+            entity: 'favorites',
+            action: 'delete',
+            data: { stationId },
+            userId: user.id
+          });
+          
+          toast("Modo Offline", {
+            description: "Removido localmente. Será sincronizado quando online."
+          });
+        }
+      }
+      
+      toast.success(`${station.name} removida dos favoritos`);
+    }
+  };
+
+  // Toggle favorito
+  const toggleFavorite = (station: Station) => {
+    if (isFavorite(station.id)) {
+      removeFavorite(station.id);
+    } else {
+      addFavorite(station);
+    }
+  };
+
+  return {
+    isFavorite,
+    addFavorite,
+    removeFavorite,
+    toggleFavorite
+  };
+}

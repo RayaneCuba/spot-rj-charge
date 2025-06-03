@@ -13,53 +13,62 @@ import {
 } from './favoritesService';
 
 export function useFavoritesState() {
-  const [favorites, setFavoritesInternal] = useState<Station[]>([]);
+  const [favorites, setFavorites] = useState<Station[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user, isVisitor } = useAuth();
   const { isOnline } = useNetworkStatus();
 
-  // Memoize setFavorites to prevent re-renders
-  const setFavorites = useCallback((newFavorites: Station[]) => {
-    setFavoritesInternal(newFavorites);
-  }, []);
-
-  // Memoize the loadFavorites function to prevent re-creation
-  const loadFavorites = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      if (isVisitor) {
-        // Usar dados mockados para visitante
-        setFavoritesInternal(getFavoritesByUserType(true));
-      } else if (user && isSupabaseConnected() && isOnline) {
-        // Se o usuário estiver logado, online e o Supabase conectado, carregar do Supabase
-        const formattedStations = await loadFavoritesFromSupabase(user.id);
-        setFavoritesInternal(formattedStations);
-        
-        // Salvar também no localStorage como cache
-        saveFavoritesToLocalStorage(formattedStations);
-      } else {
-        // Caso contrário, usar localStorage como fallback
-        const storedFavorites = loadFavoritesFromLocalStorage();
-        setFavoritesInternal(storedFavorites);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar favoritos:', error);
-      toast.error('Não foi possível carregar suas estações favoritas');
-      
-      // Tentar carregar do localStorage em caso de erro
-      try {
-        const storedFavorites = loadFavoritesFromLocalStorage();
-        setFavoritesInternal(storedFavorites);
-      } catch {} // Ignorar erros do fallback
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user?.id, isVisitor, isOnline]);
-
   // Carregar favoritos do Supabase, localStorage ou mock para visitante
   useEffect(() => {
+    let isMounted = true;
+    
+    const loadFavorites = async () => {
+      if (!isMounted) return;
+      
+      setIsLoading(true);
+      try {
+        if (isVisitor) {
+          // Usar dados mockados para visitante
+          setFavorites(getFavoritesByUserType(true));
+        } else if (user && isSupabaseConnected() && isOnline) {
+          // Se o usuário estiver logado, online e o Supabase conectado, carregar do Supabase
+          const formattedStations = await loadFavoritesFromSupabase(user.id);
+          if (isMounted) {
+            setFavorites(formattedStations);
+            // Salvar também no localStorage como cache
+            saveFavoritesToLocalStorage(formattedStations);
+          }
+        } else {
+          // Caso contrário, usar localStorage como fallback
+          const storedFavorites = loadFavoritesFromLocalStorage();
+          if (isMounted) {
+            setFavorites(storedFavorites);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar favoritos:', error);
+        if (isMounted) {
+          toast.error('Não foi possível carregar suas estações favoritas');
+          
+          // Tentar carregar do localStorage em caso de erro
+          try {
+            const storedFavorites = loadFavoritesFromLocalStorage();
+            setFavorites(storedFavorites);
+          } catch {} // Ignorar erros do fallback
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
     loadFavorites();
-  }, [loadFavorites]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, isVisitor, isOnline]);
 
   return {
     favorites,

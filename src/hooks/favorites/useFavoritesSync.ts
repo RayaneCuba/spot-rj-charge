@@ -1,5 +1,5 @@
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNetworkStatus } from '@/lib/networkStatus';
 import { useSyncQueue } from '@/lib/syncQueue';
@@ -15,6 +15,7 @@ export function useFavoritesSync(
   const { user } = useAuth();
   const { isOnline } = useNetworkStatus();
   const { isSyncing, setIsSyncing, setLastSyncAttempt, setLastSuccessfulSync } = useSyncStatus();
+  const syncInProgress = useRef(false);
 
   // Memoize the sync function to prevent re-creation on every render
   const syncQueue = useCallback(async () => {
@@ -26,10 +27,12 @@ export function useFavoritesSync(
     
     // Não tentar sincronizar se offline
     if (!isOnline) return;
+
+    // Prevenir execuções simultâneas
+    if (syncInProgress.current || isSyncing) return;
     
     try {
-      if (isSyncing) return; // Prevenir execuções simultâneas
-      
+      syncInProgress.current = true;
       setIsSyncing(true);
       setLastSyncAttempt(Date.now());
       
@@ -48,15 +51,20 @@ export function useFavoritesSync(
     } catch (error) {
       console.error("Erro ao processar fila de sincronização:", error);
     } finally {
+      syncInProgress.current = false;
       setIsSyncing(false);
     }
-  }, [user?.id, isOnline, isVisitor, isSyncing, setIsSyncing, setLastSyncAttempt, setLastSuccessfulSync]);
+  }, [user?.id, isOnline, isVisitor, isSyncing, setIsSyncing, setLastSyncAttempt, setLastSuccessfulSync, setFavorites]);
 
   // Sincronizar fila quando o usuário estiver online
   useEffect(() => {
     // Executar sincronização quando ficar online
-    if (isOnline && user && !isVisitor && !isSyncing) {
-      syncQueue();
+    if (isOnline && user && !isVisitor && !syncInProgress.current && !isSyncing) {
+      const timeoutId = setTimeout(() => {
+        syncQueue();
+      }, 100); // Small delay to prevent immediate execution
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [isOnline, user?.id, isVisitor, isSyncing, syncQueue]);
 
@@ -65,7 +73,7 @@ export function useFavoritesSync(
     if (!user || isVisitor || !isOnline) return;
     
     const interval = setInterval(() => {
-      if (!isSyncing) {
+      if (!syncInProgress.current && !isSyncing) {
         syncQueue();
       }
     }, 5 * 60 * 1000); // 5 minutos

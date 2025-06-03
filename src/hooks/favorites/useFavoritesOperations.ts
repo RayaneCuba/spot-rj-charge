@@ -76,7 +76,7 @@ export function useFavoritesOperations(
       
       toast.success(`${station.name} adicionada aos favoritos`);
     }
-  }, [favorites, isFavorite, setFavorites, isVisitor, user, isOnline, addOperation]);
+  }, [favorites, isFavorite, isVisitor, user, isOnline, addOperation]);
 
   // Remover estação dos favoritos
   const removeFavorite = useCallback(async (stationId: number) => {
@@ -131,7 +131,7 @@ export function useFavoritesOperations(
       
       toast.success(`${station.name} removida dos favoritos`);
     }
-  }, [favorites, setFavorites, isVisitor, user, isOnline, addOperation]);
+  }, [favorites, isVisitor, user, isOnline, addOperation]);
 
   // Toggle favorito
   const toggleFavorite = useCallback((station: Station) => {

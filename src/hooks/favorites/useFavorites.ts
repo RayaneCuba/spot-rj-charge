@@ -4,9 +4,9 @@ import { useFavoritesSync } from './useFavoritesSync';
 import { useFavoritesOperations } from './useFavoritesOperations';
 
 export function useFavorites() {
-  const { favorites, setFavorites, isLoading, isVisitor } = useFavoritesState();
-  const syncStatus = useFavoritesSync(setFavorites, isVisitor);
-  const operations = useFavoritesOperations(favorites, setFavorites, isVisitor);
+  const { favorites, updateFavorites, isLoading, isVisitor } = useFavoritesState();
+  const syncStatus = useFavoritesSync(updateFavorites, isVisitor);
+  const operations = useFavoritesOperations(favorites, updateFavorites, isVisitor);
 
   return {
     favorites,

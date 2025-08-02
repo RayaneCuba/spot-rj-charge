@@ -85,11 +85,17 @@ export function Header() {
                 
                 {user && (
                   <>
-                    <button
+                     <button
                       onClick={handleDashboardClick}
                       className="flex items-center gap-2 text-foreground hover:text-primary transition-colors text-left"
                     >
                       <User className="h-4 w-4" /> Meu Dashboard
+                    </button>
+                    <button
+                      onClick={() => { navigate("/reservations"); setMenuOpen(false); }}
+                      className="flex items-center gap-2 text-foreground hover:text-primary transition-colors text-left"
+                    >
+                      📅 Minhas Reservas
                     </button>
                     <button
                       onClick={handleProfileClick}
@@ -159,6 +165,9 @@ export function Header() {
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem onClick={() => navigate("/dashboard")}>
                     Dashboard
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/reservations")}>
+                    Minhas Reservas
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate("/profile")}>
                     Meu Perfil

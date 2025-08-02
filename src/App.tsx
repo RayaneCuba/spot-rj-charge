@@ -18,6 +18,7 @@ const FAQ = lazy(() => import("./pages/FAQ"));
 const NotifyPage = lazy(() => import("./pages/NotifyPage"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Profile = lazy(() => import("./pages/Profile"));
+const Reservations = lazy(() => import("./pages/Reservations"));
 const Login = lazy(() => import("./pages/Login"));
 const Signup = lazy(() => import("./pages/Signup"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -126,6 +127,14 @@ const App = () => (
                   element={
                     <AsyncBoundary>
                       <Profile />
+                    </AsyncBoundary>
+                  } 
+                />
+                <Route 
+                  path="/reservations" 
+                  element={
+                    <AsyncBoundary>
+                      <Reservations />
                     </AsyncBoundary>
                   } 
                 />

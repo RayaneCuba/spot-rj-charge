@@ -10,36 +10,24 @@ st.set_page_config(
 
 APP_URL = "https://electrospot.lovable.app"
 
-# HTML responsivo que se adapta ao tamanho da tela
-responsive_html = f"""
-<div style="width: 100%; height: 100vh; min-height: 600px;">
-    <iframe 
-        src="{APP_URL}" 
-        style="
-            width: 100%; 
-            height: 100%; 
-            border: none; 
-            display: block;
-        "
-        frameborder="0"
-        allowfullscreen>
-    </iframe>
-</div>
+# CSS para reduzir padding extra do Streamlit
+st.markdown(
+    """
+    <style>
+      .main > div { padding-top: 0rem; padding-bottom: 0rem; }
+      @media (max-width: 768px) {
+        div[data-testid="stAppViewContainer"] { padding: 0; }
+      }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
-<style>
-    /* Remove espaços extras do Streamlit */
-    .main > div {{
-        padding-top: 0rem;
-        padding-bottom: 0rem;
-    }}
-    
-    /* Responsivo para diferentes tamanhos */
-    @media (max-width: 768px) {{
-        div[data-testid="stAppViewContainer"] {{
-            padding: 0;
-        }}
-    }}
-</style>
-"""
+# Tenta incorporar o app (alguns navegadores podem bloquear por política de segurança do site)
+components.iframe(APP_URL, height=800, scrolling=True)
 
-components.html(responsive_html, height=700)
+st.divider()
+
+# Fallback: link para abrir em nova aba caso a incorporação fique em branco
+st.link_button("Abrir ElectroSpot em nova aba", APP_URL, type="primary")
+st.caption("Se a visualização incorporada estiver em branco, use o botão acima para abrir em uma nova aba.")

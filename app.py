@@ -16,18 +16,26 @@ st.markdown(
     <style>
       .main > div { padding-top: 0rem; padding-bottom: 0rem; }
       @media (max-width: 768px) {
-        div[data-testid="stAppViewContainer"] { padding: 0; }
+        div[data-testid=\"stAppViewContainer\"] { padding: 0; }
       }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# Tenta incorporar o app (alguns navegadores podem bloquear por política de segurança do site)
-components.iframe(APP_URL, height=800, scrolling=True)
+# Redireciona automaticamente para abrir como página normal (caso iframe seja bloqueado)
+redirect_html = f"""
+<meta http-equiv=\"refresh\" content=\"0; url={APP_URL}\">
+<script>
+  try { window.top.location.replace('{APP_URL}'); } catch (e) { window.location.href = '{APP_URL}'; }
+</script>
+<p style=\"font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial, \"\">
+  Redirecionando para o ElectroSpot… Se não acontecer, 
+  <a href=\"{APP_URL}\" target=\"_self\">clique aqui</a>.
+</p>
+"""
 
-st.divider()
+components.html(redirect_html, height=0)
 
-# Fallback: link para abrir em nova aba caso a incorporação fique em branco
-st.link_button("Abrir ElectroSpot em nova aba", APP_URL, type="primary")
-st.caption("Se a visualização incorporada estiver em branco, use o botão acima para abrir em uma nova aba.")
+# Botão de fallback visível
+st.link_button("Abrir ElectroSpot agora", APP_URL, type="primary")
